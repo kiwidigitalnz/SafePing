@@ -47,17 +47,20 @@ safeping/
 ### Installation
 
 1. Clone the repository:
+
 ```bash
 git clone <repository-url>
 cd safeping
 ```
 
 2. Install dependencies:
+
 ```bash
 pnpm install
 ```
 
 3. Set up environment variables:
+
 ```bash
 # Copy example env files
 cp apps/web/.env.example apps/web/.env.local
@@ -68,11 +71,13 @@ cp apps/landing/.env.example apps/landing/.env.local
 ```
 
 4. Start Supabase locally (optional):
+
 ```bash
 npx supabase start
 ```
 
 5. Run the development servers:
+
 ```bash
 # Run all apps
 pnpm dev
@@ -94,9 +99,10 @@ pnpm --filter landing dev
 ## Apps
 
 ### Web App (Admin Dashboard)
+
 - **URL**: http://localhost:5173
 - **Purpose**: Administrative interface for safety managers
-- **Features**: 
+- **Features**:
   - Worker management
   - Real-time check-in monitoring
   - Incident tracking
@@ -104,6 +110,7 @@ pnpm --filter landing dev
   - Reporting and analytics
 
 ### PWA (Worker App)
+
 - **URL**: http://localhost:5174
 - **Purpose**: Mobile-first app for field workers
 - **Features**:
@@ -114,6 +121,7 @@ pnpm --filter landing dev
   - Two-way messaging
 
 ### Landing Site
+
 - **URL**: http://localhost:5175
 - **Purpose**: Marketing and public-facing website
 - **Features**:
@@ -125,24 +133,28 @@ pnpm --filter landing dev
 ## Key Features
 
 ### 🛡️ Safety Monitoring
+
 - Real-time worker status tracking
 - Automated check-in schedules
 - GPS location verification
 - Emergency alert system
 
 ### 📱 Mobile-First Design
+
 - Progressive Web App (PWA)
 - Offline capability
 - Push notifications
 - Touch-optimized interface
 
 ### 🔧 Admin Dashboard
+
 - Comprehensive worker management
 - Incident tracking and reporting
 - Escalation chain configuration
 - Compliance reporting
 
 ### 🏢 Multi-Tenant
+
 - Organization-based isolation
 - Role-based access control
 - Customizable settings
@@ -229,6 +241,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## Support
 
 For support and questions:
+
 - Create an issue on GitHub
 - Contact: support@safeping.app
-- Documentation: https://docs.safeping.app
+- Documentation: https://docs.safeping.app# Test comment
