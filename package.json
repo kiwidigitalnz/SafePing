@@ -19,10 +19,10 @@
     "lint-staged": "lint-staged"
   },
   "devDependencies": {
-    "supabase": "^2.31.4",
-    "turbo": "^2.0.0",
     "husky": "^9.0.11",
-    "lint-staged": "^15.2.2"
+    "lint-staged": "^15.2.2",
+    "supabase": "^2.31.4",
+    "turbo": "^2.0.0"
   },
   "lint-staged": {
     "apps/web/src/**/*.{js,jsx,ts,tsx}": [
@@ -44,5 +44,8 @@
   "packageManager": "pnpm@8.15.0",
   "engines": {
     "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.54.0"
   }
 }
