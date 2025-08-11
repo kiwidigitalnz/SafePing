@@ -226,8 +226,13 @@ export function getSMSConfig(): SMSConfig | null {
  * Format phone number to international format
  */
 export function formatPhoneNumber(phone: string, defaultCountryCode = '+64'): string {
-  // Remove all non-digit characters
-  const cleaned = phone.replace(/\D/g, '')
+  // Remove all non-digit characters except +
+  const cleaned = phone.replace(/[^\d+]/g, '')
+  
+  // If it already starts with +, return as is
+  if (cleaned.startsWith('+')) {
+    return cleaned
+  }
   
   // If it starts with 0, replace with country code
   if (cleaned.startsWith('0')) {
@@ -235,11 +240,7 @@ export function formatPhoneNumber(phone: string, defaultCountryCode = '+64'): st
   }
   
   // If it doesn't start with +, add country code
-  if (!phone.startsWith('+')) {
-    return defaultCountryCode + cleaned
-  }
-  
-  return phone
+  return defaultCountryCode + cleaned
 }
 
 /**

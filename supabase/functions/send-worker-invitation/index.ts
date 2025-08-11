@@ -17,13 +17,64 @@ serve(async (req) => {
   }
 
   try {
-    const body: InvitationRequest = await req.json()
+    // Log environment configuration (without exposing secrets)
+    console.log('Environment check:', {
+      hasSupabaseUrl: !!Deno.env.get('SUPABASE_URL'),
+      hasSupabaseKey: !!Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
+      hasSmsProvider: !!Deno.env.get('SMS_PROVIDER'),
+      smsProvider: Deno.env.get('SMS_PROVIDER') || 'not configured',
+      hasClicksendCreds: !!(Deno.env.get('CLICKSEND_USERNAME') && Deno.env.get('CLICKSEND_API_KEY')),
+      hasTwilioCreds: !!(Deno.env.get('TWILIO_ACCOUNT_SID') && Deno.env.get('TWILIO_AUTH_TOKEN')),
+      pwaUrl: Deno.env.get('PWA_URL') || 'https://my.safeping.app'
+    })
+    
+    // Add debug logging
+    console.log('Request received:', {
+      method: req.method,
+      url: req.url,
+      headers: Object.fromEntries(req.headers.entries())
+    })
+    
+    // Log the raw request body first
+    const rawBody = await req.text()
+    console.log('Raw request body:', rawBody)
+    
+    // Try to parse as JSON
+    let body: InvitationRequest
+    try {
+      body = JSON.parse(rawBody)
+      console.log('Request body parsed successfully:', body)
+    } catch (parseError) {
+      console.error('Failed to parse JSON:', parseError)
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON format' }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+    
+    // Validate body structure before destructuring
+    if (!body || typeof body !== 'object') {
+      console.error('Invalid request body:', body)
+      return new Response(
+        JSON.stringify({ error: 'Invalid request body format' }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+    
     const { phoneNumber, invitationToken, workerName, organizationName } = body
 
     console.log(`Sending invitation to ${workerName} at ${phoneNumber}`)
+    console.log('Extracted fields:', { phoneNumber, invitationToken, workerName, organizationName })
 
     // Validate required fields
     if (!phoneNumber || !invitationToken || !workerName) {
+      console.log('Missing required fields:', { phoneNumber, invitationToken, workerName })
       return new Response(
         JSON.stringify({ error: 'Missing required fields' }),
         { 
@@ -125,18 +176,28 @@ Reply STOP to opt out.`
       })
 
       // Update invitation status if we have the invitation record
-      const { error: updateError } = await supabaseClient
+      const { data: updateData, error: updateError } = await supabaseClient
         .from('worker_invitations')
         .update({ 
           sms_sent_at: new Date().toISOString(),
           sms_delivery_status: 'sent',
-          sms_message_id: result.messageId || null
+          sms_message_id: result.messageId || null,
+          status: 'sent'
         })
         .eq('invitation_token', invitationToken)
+        .select()
 
       if (updateError) {
         console.error('Error updating invitation status:', updateError)
+        console.error('Update error details:', {
+          code: updateError.code,
+          message: updateError.message,
+          details: updateError.details,
+          hint: updateError.hint
+        })
         // Don't fail the request - SMS was sent successfully
+      } else {
+        console.log('Successfully updated invitation status:', updateData)
       }
     }
 

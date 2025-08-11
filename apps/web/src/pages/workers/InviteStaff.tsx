@@ -157,7 +157,14 @@ export default function InviteStaffPage() {
 
       // Send SMS invitation if requested
       if (formData.sendSMS) {
-        const { error: smsError } = await supabase.functions.invoke('send-worker-invitation', {
+        console.log('Invoking send-worker-invitation function with:', {
+          phoneNumber: formattedPhone,
+          invitationToken,
+          workerName: `${formData.firstName} ${formData.lastName}`,
+          organizationName: 'SafePing'
+        })
+
+        const { data: smsData, error: smsError } = await supabase.functions.invoke('send-worker-invitation', {
           body: {
             phoneNumber: formattedPhone,
             invitationToken,
@@ -166,10 +173,17 @@ export default function InviteStaffPage() {
           }
         })
 
+        console.log('Edge function response:', { data: smsData, error: smsError })
+
         if (smsError) {
           console.error('SMS send error:', smsError)
           // Don't throw - invitation was created, just SMS failed
           setError('Staff member invited but SMS failed to send. They can still be added manually.')
+        } else if (smsData && !smsData.success) {
+          console.error('SMS send failed:', smsData.error)
+          setError(`Staff member invited but SMS failed: ${smsData.error || 'Unknown error'}`)
+        } else {
+          console.log('SMS sent successfully:', smsData)
         }
       }
 

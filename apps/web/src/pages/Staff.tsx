@@ -162,7 +162,7 @@ export function Staff() {
       const invitationToken = crypto.randomUUID()
       
       // Update the user's invitation token
-      await supabase
+      const { error: updateError } = await supabase
         .from('users')
         .update({ 
           invitation_token: invitationToken,
@@ -170,7 +170,39 @@ export function Staff() {
         })
         .eq('id', staff.id)
 
+      if (updateError) {
+        console.error('Error updating user invitation token:', updateError)
+        throw new Error('Failed to update invitation token')
+      }
+
+      // Create or update worker invitation record
+      const { error: invitationError } = await supabase
+        .from('worker_invitations')
+        .upsert({
+          user_id: staff.id,
+          organization_id: user?.organization_id,
+          invited_by: user?.id,
+          invitation_token: invitationToken,
+          phone_number: staff.phone,
+          status: 'pending',
+          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+        }, {
+          onConflict: 'user_id'
+        })
+
+      if (invitationError) {
+        console.error('Error creating/updating invitation record:', invitationError)
+        throw new Error('Failed to create invitation record')
+      }
+
       // Send SMS via edge function
+      console.log('Invoking send-worker-invitation function with:', {
+        phoneNumber: staff.phone,
+        invitationToken,
+        workerName: `${staff.first_name} ${staff.last_name}`,
+        organizationName: 'SafePing'
+      })
+
       const { data, error } = await supabase.functions.invoke('send-worker-invitation', {
         body: {
           phoneNumber: staff.phone,
@@ -180,7 +212,16 @@ export function Staff() {
         }
       })
 
-      if (error) throw error
+      console.log('Edge function response:', { data, error })
+
+      if (error) {
+        console.error('Edge function error:', error)
+        throw error
+      }
+
+      if (data && !data.success) {
+        throw new Error(data.error || 'Failed to send SMS')
+      }
 
       // Show success message
       alert(`SMS invitation resent to ${staff.first_name} ${staff.last_name} at ${staff.phone}`)
@@ -189,7 +230,8 @@ export function Staff() {
       queryClient.invalidateQueries({ queryKey: ['users'] })
     } catch (error: any) {
       console.error('Error resending SMS:', error)
-      alert(`Failed to resend SMS: ${error.message || 'Unknown error'}`)
+      const errorMessage = error.message || error.error || 'Unknown error'
+      alert(`Failed to resend SMS: ${errorMessage}`)
     } finally {
       setSendingSMS(null)
     }
