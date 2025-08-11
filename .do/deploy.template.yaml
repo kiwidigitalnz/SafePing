@@ -1,0 +1,45 @@
+spec:
+  name: safeping-production
+  region: nyc
+  
+  # Single service using Dockerfile
+  services:
+    - name: safeping
+      # Explicitly use Dockerfile, not auto-detection
+      dockerfile_path: Dockerfile
+      source_dir: /
+      
+      # GitHub source
+      github:
+        repo: kiwidigitalnz/SafePing
+        branch: main
+        deploy_on_push: true
+      
+      # Single instance configuration
+      instance_size_slug: basic-xxs
+      instance_count: 1
+      
+      # Port configuration
+      http_port: 80
+      
+      # Health check
+      health_check:
+        http_path: /
+        
+      # Environment variables for build
+      envs:
+        - key: VITE_SUPABASE_URL
+          scope: BUILD_TIME
+          type: SECRET
+        - key: VITE_SUPABASE_ANON_KEY
+          scope: BUILD_TIME
+          type: SECRET
+        - key: VITE_GOOGLE_CLIENT_ID
+          scope: BUILD_TIME
+          type: SECRET
+        - key: VITE_STRIPE_PUBLIC_KEY
+          scope: BUILD_TIME
+          type: SECRET
+        - key: VITE_VAPID_PUBLIC_KEY
+          scope: BUILD_TIME
+          type: SECRET
