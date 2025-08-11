@@ -204,7 +204,7 @@ export default function PricingPage() {
                     {tier.cta}
                   </a>
                 ) : (
-                  <a href={`${import.meta.env.VITE_WEB_APP_URL || 'https://app.safeping.novaly.app'}/signup?plan=${tier.name.toLowerCase()}`}>
+                  <a href={`${import.meta.env.VITE_APP_URL || 'http://localhost:5173'}/auth/signup?plan=${tier.name.toLowerCase()}`}>
                     {tier.cta}
                   </a>
                 )}
@@ -296,7 +296,7 @@ export default function PricingPage() {
             Join hundreds of companies keeping their lone workers safe
           </p>
           <Button size="lg" variant="secondary" asChild>
-            <a href={`${import.meta.env.VITE_WEB_APP_URL || 'https://app.safeping.novaly.app'}/signup`}>
+            <a href={`${import.meta.env.VITE_APP_URL || 'http://localhost:5173'}/auth/signup`}>
               Start Your Free Trial
             </a>
           </Button>

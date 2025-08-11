@@ -211,7 +211,7 @@ export function PrivacyPolicy() {
             </p>
 
             <p className="text-gray-700 mb-4">
-              To exercise these rights, contact us at privacy@safeping.co.nz. We will respond within 20 working 
+              To exercise these rights, contact us at privacy@safeping.app. We will respond within 20 working
               days as required by law.
             </p>
           </section>
@@ -277,7 +277,7 @@ export function PrivacyPolicy() {
             <ul className="list-disc pl-6 text-gray-700 mb-4">
               <li>Clicking the unsubscribe link in any marketing email</li>
               <li>Updating your communication preferences in account settings</li>
-              <li>Contacting us at privacy@safeping.co.nz</li>
+              <li>Contacting us at privacy@safeping.app</li>
             </ul>
             <p className="text-gray-700 mb-4">
               Note: We will continue to send essential service communications regardless of marketing preferences.
@@ -307,7 +307,7 @@ export function PrivacyPolicy() {
             <div className="bg-gray-100 p-4 rounded-lg text-gray-700 mb-4">
               <p className="font-semibold">Privacy Officer</p>
               <p>SafePing Limited</p>
-              <p>Email: privacy@safeping.co.nz</p>
+              <p>Email: privacy@safeping.app</p>
               <p>Phone: 0800 SAFEPING (0800 723 374)</p>
               <p>Address: Level 1, 123 Safety Street, Auckland 1010, New Zealand</p>
             </div>

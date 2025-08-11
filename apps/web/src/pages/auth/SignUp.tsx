@@ -149,12 +149,8 @@ export function SignUp() {
   }
 
   const handleBack = () => {
-    // In production, this would be your landing page domain
-    // In development, redirect to the landing app running on port 5175
-    const landingUrl = import.meta.env.PROD 
-      ? 'https://safeping.co.nz' // Replace with your actual production landing page URL
-      : 'http://localhost:5175'
-    
+    // Use environment variable for landing page URL
+    const landingUrl = import.meta.env.VITE_LANDING_URL || 'http://localhost:5175'
     window.location.href = landingUrl
   }
 

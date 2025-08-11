@@ -20,7 +20,7 @@ export default function HomePage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
               <Button size="lg" className="text-lg px-8" asChild>
-                <a href={`${import.meta.env.VITE_WEB_URL || 'http://localhost:5173'}/signup`}>
+                <a href={`${import.meta.env.VITE_APP_URL || 'http://localhost:5173'}/auth/signup`}>
                   Start 7-Day Free Trial
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </a>

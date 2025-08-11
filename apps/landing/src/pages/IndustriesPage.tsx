@@ -240,7 +240,7 @@ export default function IndustriesPage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg" variant="secondary" asChild>
-              <a href={`${import.meta.env.VITE_WEB_APP_URL || 'https://app.safeping.novaly.app'}/signup`}>
+              <a href={`${import.meta.env.VITE_APP_URL || 'http://localhost:5173'}/auth/signup`}>
                 Start Free Trial
               </a>
             </Button>

@@ -234,7 +234,7 @@ export function TermsOfService() {
             </p>
             <div className="bg-gray-100 p-4 rounded-lg text-gray-700">
               <p className="font-semibold">SafePing Limited</p>
-              <p>Email: legal@safeping.co.nz</p>
+              <p>Email: legal@safeping.app</p>
               <p>Phone: 0800 SAFEPING (0800 723 374)</p>
               <p>Address: Level 1, 123 Safety Street, Auckland 1010, New Zealand</p>
             </div>

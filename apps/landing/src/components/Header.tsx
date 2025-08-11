@@ -44,12 +44,12 @@ export default function Header() {
               </a>
             </Button>
             <Button variant="ghost" asChild>
-              <a href={import.meta.env.VITE_WEB_URL || 'http://localhost:5173'}>
+              <a href={import.meta.env.VITE_APP_URL || 'http://localhost:5173'}>
                 Sign In
               </a>
             </Button>
             <Button asChild>
-              <a href={`${import.meta.env.VITE_WEB_URL || 'http://localhost:5173'}/signup`}>
+              <a href={`${import.meta.env.VITE_APP_URL || 'http://localhost:5173'}/auth/signup`}>
                 Start Free Trial
               </a>
             </Button>
@@ -110,12 +110,12 @@ export default function Header() {
                   </a>
                 </Button>
                 <Button variant="outline" className="w-full" asChild>
-                  <a href={import.meta.env.VITE_WEB_URL || 'http://localhost:5173'}>
+                  <a href={import.meta.env.VITE_APP_URL || 'http://localhost:5173'}>
                     Sign In
                   </a>
                 </Button>
                 <Button className="w-full" asChild>
-                  <a href={`${import.meta.env.VITE_WEB_URL || 'http://localhost:5173'}/signup`}>
+                  <a href={`${import.meta.env.VITE_APP_URL || 'http://localhost:5173'}/auth/signup`}>
                     Start Free Trial
                   </a>
                 </Button>

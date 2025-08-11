@@ -70,8 +70,8 @@ export default function Footer() {
               © 2025 SafePing. All rights reserved.
             </p>
             <div className="mt-4 md:mt-0 flex space-x-6">
-              <a href="#" className="text-sm hover:text-white transition-colors">Privacy Policy</a>
-              <a href="#" className="text-sm hover:text-white transition-colors">Terms of Service</a>
+              <a href={`${import.meta.env.VITE_APP_URL || 'http://localhost:5173'}/legal/privacy`} className="text-sm hover:text-white transition-colors">Privacy Policy</a>
+              <a href={`${import.meta.env.VITE_APP_URL || 'http://localhost:5173'}/legal/terms`} className="text-sm hover:text-white transition-colors">Terms of Service</a>
               <a href="#" className="text-sm hover:text-white transition-colors">Cookie Policy</a>
             </div>
           </div>
