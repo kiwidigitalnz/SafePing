@@ -147,3 +147,25 @@ If the deployment still fails:
 ⏳ DigitalOcean deployment succeeds
 ⏳ All apps accessible at their respective domains
 ⏳ SMS functionality works in production
+
+## Additional Nginx Configuration Fixes (January 11, 2025 - 6:45 PM)
+
+### Issues Found in Deployment Logs:
+1. **404 errors on health checks**: nginx was looking for files in `/etc/nginx/html/` instead of `/usr/share/nginx/html/`
+2. **Conflicting server names**: Duplicate server block for `www.safeping.app`
+3. **Health check failures**: Kubernetes probes failing due to incorrect file paths
+
+### Fixes Applied:
+1. **Updated nginx-app.conf**:
+   - Added proper default server configuration with `default_server` directive
+   - Fixed root directory paths to match Docker's file structure
+   - Removed duplicate www.safeping.app server block
+   - Ensured health check endpoint works correctly at `/health`
+
+### Commits:
+- "Fix nginx configuration for Docker deployment" - Resolved all nginx path and configuration issues
+
+## Current Deployment Status:
+- ✅ Build issues resolved
+- ✅ Nginx configuration fixed
+- ⏳ Awaiting DigitalOcean deployment with latest fixes
