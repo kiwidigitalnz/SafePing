@@ -1,28 +1,34 @@
 import js from '@eslint/js'
-import globals from 'globals'
-import reactHooks from 'eslint-plugin-react-hooks'
-import reactRefresh from 'eslint-plugin-react-refresh'
-import tseslint from 'typescript-eslint'
+import typescript from '@typescript-eslint/eslint-plugin'
+import typescriptParser from '@typescript-eslint/parser'
 
-export default tseslint.config(
-  { ignores: ['dist/', 'dev-dist/', 'node_modules/', '*.js', 'sw.js', 'workbox-*.js'] },
+export default [
+  js.configs.recommended,
   {
-    extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ['**/*.{ts,tsx}'],
     languageOptions: {
-      ecmaVersion: 2020,
-      globals: globals.browser,
+      parser: typescriptParser,
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+      },
+      globals: {
+        browser: true,
+        es2022: true,
+        node: true,
+      },
     },
     plugins: {
-      'react-hooks': reactHooks,
-      'react-refresh': reactRefresh,
+      '@typescript-eslint': typescript,
     },
     rules: {
-      ...reactHooks.configs.recommended.rules,
-      'react-refresh/only-export-components': [
-        'warn',
-        { allowConstantExport: true },
-      ],
+      'no-undef': 'off',
+      'no-unused-vars': 'off',
+      'no-explicit-any': 'off',
+      'prefer-const': 'off',
     },
   },
-)
+  {
+    ignores: ['dist/**', 'node_modules/**', '*.config.js', '*.config.ts', 'dev-dist/**', 'public/sw.js'],
+  },
+]

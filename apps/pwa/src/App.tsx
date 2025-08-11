@@ -5,7 +5,6 @@ import { workerAuth } from './lib/workerAuth'
 
 // Pages
 import CheckInPage from './pages/CheckIn'
-import AuthPage from './pages/Auth'
 import ProfilePage from './pages/Profile'
 import HistoryPage from './pages/History'
 import EmergencyPage from './pages/Emergency'

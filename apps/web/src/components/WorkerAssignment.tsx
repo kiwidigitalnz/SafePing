@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Search, Users, X, Check, User } from 'lucide-react'
+import { Search, Users, X, Check, User as UserIcon } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { getScheduleAssignments, assignUserToSchedule, unassignUserFromSchedule } from '../lib/api/schedules'
 import type { Database } from '../lib/supabase'
@@ -156,7 +156,7 @@ export function WorkerAssignment({ schedule, organizationId, onClose, onAssignme
                 {currentAssignments.map((assignment) => (
                   <div key={assignment.id} className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
-                      <User className="w-4 h-4 text-green-600" />
+                      <UserIcon className="w-4 h-4 text-green-600" />
                       <span className="text-sm font-medium text-green-900">
                         {assignment.user.first_name} {assignment.user.last_name}
                       </span>

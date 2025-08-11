@@ -162,7 +162,7 @@ class OfflineQueueManager {
 
   // Sync check-in
   private async syncCheckIn(data: any): Promise<boolean> {
-    const { data: result, error } = await supabase
+    const { error } = await supabase
       .from('check_ins')
       .insert({
         user_id: data.userId,

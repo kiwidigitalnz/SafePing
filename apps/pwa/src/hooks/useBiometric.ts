@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 
 interface BiometricCredential {
   id: string
@@ -176,7 +176,7 @@ export function useBiometric() {
 
       // In production, send assertion to server for verification
       // For now, we'll just check if we got a valid response
-      const response = assertion.response as AuthenticatorAssertionResponse
+      // const response = assertion.response as AuthenticatorAssertionResponse
       
       // Store last authentication time
       localStorage.setItem('last_biometric_auth', new Date().toISOString())

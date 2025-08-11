@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { User, Phone, Mail, Briefcase, Shield } from 'lucide-react'
+import { User as UserIcon, Mail, Phone, MapPin, Calendar, Clock, CheckCircle, XCircle } from 'lucide-react'
 import type { Database } from '../lib/supabase'
 
 type User = Database['public']['Tables']['users']['Row']
@@ -140,7 +140,7 @@ export function StaffForm({ staff, organizationId, onSubmit, onCancel, loading }
         {/* Personal Information */}
         <div>
           <h4 className="text-sm font-medium text-gray-900 mb-4 flex items-center">
-            <User className="w-4 h-4 mr-2" />
+            <UserIcon className="w-4 h-4 mr-2" />
             Personal Information
           </h4>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

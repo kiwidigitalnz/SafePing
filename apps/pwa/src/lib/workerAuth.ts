@@ -195,7 +195,7 @@ class WorkerAuthManager {
   // Send OTP for authentication
   async sendOTP(phoneNumber: string): Promise<{ success: boolean; error?: string }> {
     try {
-      const { data, error } = await supabase.functions.invoke('send-verification-code', {
+      const { error } = await supabase.functions.invoke('send-verification-code', {
         body: {
           phone_number: phoneNumber,
           type: 'worker_auth'

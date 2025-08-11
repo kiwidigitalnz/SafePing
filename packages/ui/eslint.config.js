@@ -29,17 +29,6 @@ export default [
     },
   },
   {
-    ignores: [
-      'dist/**', 
-      'node_modules/**', 
-      '**/*-backup.js', 
-      '**/*-minimal.js',
-      '**/*.js',
-      'test-*.js',
-      'test-*.mjs',
-      'check-*.js',
-      'create-*.js',
-      'create-*.cjs'
-    ],
+    ignores: ['dist/**', 'node_modules/**', '*.config.js', '*.config.ts'],
   },
 ]

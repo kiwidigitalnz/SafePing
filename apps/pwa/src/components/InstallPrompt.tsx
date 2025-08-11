@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { X, Download, Smartphone, Bell, MapPin, Shield, ChevronRight } from 'lucide-react'
+import { X, Download, Smartphone, Bell, MapPin, Shield } from 'lucide-react'
 import { usePWAInstall } from '../hooks/usePWAInstall'
 
 interface InstallPromptProps {

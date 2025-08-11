@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { 
-  User, 
+  User as UserIcon, 
   Mail, 
   Phone, 
   IdCard, 
@@ -80,7 +80,7 @@ export function StaffDetail({ staff, onEdit, onClose }: StaffDetailProps) {
   }
 
   const tabs = [
-    { id: 'overview', label: 'Overview', icon: User },
+    { id: 'overview', label: 'Overview', icon: UserIcon },
     { id: 'checkins', label: 'Recent Check-ins', icon: CheckCircle },
     { id: 'schedules', label: 'Schedules', icon: Calendar },
   ]
@@ -231,7 +231,7 @@ export function StaffDetail({ staff, onEdit, onClose }: StaffDetailProps) {
                 </h4>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="flex items-center space-x-3">
-                    <User className="w-5 h-5 text-gray-400" />
+                    <UserIcon className="w-5 h-5 text-gray-400" />
                     <div>
                       <p className="text-sm font-medium text-gray-900">Name</p>
                       <p className="text-sm text-gray-600">{staff.emergency_contact_name || 'Not provided'}</p>
@@ -271,7 +271,7 @@ export function StaffDetail({ staff, onEdit, onClose }: StaffDetailProps) {
                 </div>
                 {staff.last_seen_at && (
                   <div className="flex items-center space-x-3">
-                    <User className="w-5 h-5 text-gray-400" />
+                    <UserIcon className="w-5 h-5 text-gray-400" />
                     <div>
                       <p className="text-sm font-medium text-gray-900">Last Seen</p>
                       <p className="text-sm text-gray-600">{formatDateTime(staff.last_seen_at)}</p>

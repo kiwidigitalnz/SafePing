@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { Fingerprint, Scan, Smartphone, AlertCircle, CheckCircle } from 'lucide-react'
 import { useBiometric } from '../hooks/useBiometric'
 
@@ -23,8 +23,7 @@ export function BiometricAuth({
     isRegistered,
     biometricType,
     registerBiometric,
-    authenticateWithBiometric,
-    isBiometricEnabled
+    authenticateWithBiometric
   } = useBiometric()
 
   const [loading, setLoading] = useState(false)

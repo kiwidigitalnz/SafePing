@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
 
-interface GeolocationState {
-  latitude: number | null
-  longitude: number | null
-  accuracy: number | null
-  timestamp: number | null
-  error: string | null
-}
+// interface GeolocationState {
+//   latitude: number | null
+//   longitude: number | null
+//   accuracy: number | null
+//   timestamp: number | null
+//   error: string | null
+// }
 
 interface GeolocationOptions {
   enableHighAccuracy?: boolean

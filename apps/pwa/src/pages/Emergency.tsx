@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { MapPin, Phone, AlertTriangle, CheckCircle, XCircle } from 'lucide-react'
+import { MapPin, Phone, AlertTriangle, CheckCircle } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useGeolocation } from '../hooks/useGeolocation'
 
@@ -8,7 +8,7 @@ export default function EmergencyPage() {
   const [countdown, setCountdown] = useState(10)
   const [emergencyId, setEmergencyId] = useState<string | null>(null)
   const [contacts, setContacts] = useState<any[]>([])
-  const { location, error: locationError, requestLocation } = useGeolocation()
+  const { location, requestLocation } = useGeolocation()
 
   useEffect(() => {
     loadEmergencyContacts()

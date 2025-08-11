@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Shield, Smartphone, MessageSquare, Fingerprint, Search, ChevronDown, Check } from 'lucide-react'
 import { PinEntry } from '../components/PinEntry'
@@ -31,7 +31,7 @@ export function WorkerAuth() {
   // Invitation data
   const [invitationToken, setInvitationToken] = useState<string | null>(null)
   const [phoneNumber, setPhoneNumber] = useState('')
-  const [verificationCode, setVerificationCode] = useState('')
+  // const [verificationCode, setVerificationCode] = useState('')
   
   // Country selection
   const [selectedCountry, setSelectedCountry] = useState(countryCodesData[0])

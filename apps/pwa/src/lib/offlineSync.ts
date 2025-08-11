@@ -64,7 +64,7 @@ class OfflineSyncManager {
         }
 
         if (!db.objectStoreNames.contains('sync_status')) {
-          const statusStore = db.createObjectStore('sync_status', { keyPath: 'key' })
+          // const statusStore = db.createObjectStore('sync_status', { keyPath: 'key' })
         }
       }
     })

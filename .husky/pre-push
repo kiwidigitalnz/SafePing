@@ -1,0 +1,31 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🔍 Running pre-push checks..."
+
+# Function to check if a command succeeded
+check_command() {
+  if [ $? -eq 0 ]; then
+    echo "✅ $1 passed"
+  else
+    echo "❌ $1 failed"
+    exit 1
+  fi
+}
+
+# Run TypeScript checks
+echo "📝 Checking TypeScript..."
+pnpm typecheck
+check_command "TypeScript check"
+
+# Run linting
+echo "🧹 Running linter..."
+pnpm lint
+check_command "Linting"
+
+# Run build checks
+echo "🏗️  Building applications..."
+pnpm build
+check_command "Build"
+
+echo "🎉 All pre-push checks passed! Proceeding with push..."

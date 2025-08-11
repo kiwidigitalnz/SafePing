@@ -13,11 +13,24 @@
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",
     "test": "turbo test",
-    "clean": "turbo clean"
+    "clean": "turbo clean",
+    "prepare": "husky install",
+    "pre-push": "turbo typecheck && turbo lint && turbo build",
+    "lint-staged": "lint-staged"
   },
   "devDependencies": {
     "supabase": "^2.31.4",
-    "turbo": "^2.0.0"
+    "turbo": "^2.0.0",
+    "husky": "^9.0.11",
+    "lint-staged": "^15.2.2"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix --max-warnings 0"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
   },
   "packageManager": "pnpm@8.15.0",
   "engines": {

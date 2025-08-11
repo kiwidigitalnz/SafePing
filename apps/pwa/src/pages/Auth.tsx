@@ -8,7 +8,6 @@ import {
   Smartphone, 
   Mail, 
   MessageSquare,
-  ArrowRight, 
   Shield, 
   Lock,
   Eye,
