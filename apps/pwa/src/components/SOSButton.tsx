@@ -26,9 +26,9 @@ export function SOSButton({ userId, organizationId, onEmergencyTriggered }: SOSB
   const { queueEmergencyData } = usePushNotifications()
   const { location, accuracy, requestLocation, isLoading: locationLoading } = useGeolocation()
   
-  const holdTimerRef = useRef<number | null>(null)
-  const countdownTimerRef = useRef<number | null>(null)
-  const vibrationRef = useRef<number | null>(null)
+  const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const countdownTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const vibrationRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   
   const HOLD_DURATION = 3000 // 3 seconds to activate
   const COUNTDOWN_DURATION = 10000 // 10 seconds to cancel
@@ -58,7 +58,7 @@ export function SOSButton({ userId, organizationId, onEmergencyTriggered }: SOSB
         })
       }, 1000)
       
-      countdownTimerRef.current = interval
+      countdownTimerRef.current = interval as any
       
       // Vibrate during countdown
       if ('vibrate' in navigator) {
@@ -195,7 +195,7 @@ export function SOSButton({ userId, organizationId, onEmergencyTriggered }: SOSB
       if ('vibrate' in navigator) {
         const emergencyVibrate = () => {
           navigator.vibrate([1000, 500, 1000, 500, 1000])
-          vibrationRef.current = setTimeout(emergencyVibrate, 3000)
+          vibrationRef.current = setTimeout(emergencyVibrate, 3000) as any
         }
         emergencyVibrate()
       }
