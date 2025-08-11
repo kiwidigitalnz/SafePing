@@ -1,4 +1,4 @@
-name: Deploy to DigitalOcean
+name: Build and Push to DigitalOcean Registry
 
 on:
   push:
@@ -11,9 +11,9 @@ env:
   IMAGE_NAME: safeping-production
 
 jobs:
-  build-and-deploy:
+  build-and-push:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -29,7 +29,8 @@ jobs:
           docker tag ${{ env.IMAGE_NAME }}:${{ github.sha }} ${{ env.IMAGE_NAME }}:latest
 
       - name: Log in to DigitalOcean Container Registry
-        run: doctl registry login --expiry-seconds 1200
+        run: |
+          echo ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }} | doctl registry login --expiry-seconds 1200
 
       - name: Push image to DigitalOcean Container Registry
         run: |
@@ -38,28 +39,11 @@ jobs:
           docker push ${{ env.REGISTRY }}/${{ secrets.DIGITALOCEAN_REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           docker push ${{ env.REGISTRY }}/${{ secrets.DIGITALOCEAN_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
 
-      - name: Deploy to DigitalOcean App Platform
+      - name: Notify completion
         run: |
-          doctl apps update ${{ secrets.DIGITALOCEAN_APP_ID }} --spec .do/app.yaml
-
-      - name: Verify deployment
-        run: |
-          echo "Deployment triggered successfully!"
+          echo "✅ Image built and pushed successfully!"
+          echo "DigitalOcean will automatically deploy the new image."
           echo "Check your app at:"
           echo "  - Landing: https://safeping.app"
           echo "  - Dashboard: https://web.safeping.app"
           echo "  - PWA: https://my.safeping.app"
-
-  notify:
-    needs: build-and-deploy
-    runs-on: ubuntu-latest
-    if: always()
-    
-    steps:
-      - name: Notify deployment status
-        run: |
-          if [ "${{ needs.build-and-deploy.result }}" == "success" ]; then
-            echo "✅ Deployment successful!"
-          else
-            echo "❌ Deployment failed!"
-          fi
