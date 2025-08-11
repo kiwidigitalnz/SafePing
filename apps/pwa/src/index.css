@@ -1,0 +1,204 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --primary: 249 115 22; /* orange-500 */
+    --primary-dark: 234 88 12; /* orange-600 */
+    --primary-foreground: 255 255 255;
+  }
+  
+  * {
+    @apply border-gray-200;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  body {
+    @apply bg-gray-50 text-gray-900;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overscroll-behavior: none;
+  }
+  
+  /* Prevent pull-to-refresh on mobile */
+  html {
+    overscroll-behavior-y: contain;
+  }
+  
+  /* Better input focus styles */
+  input:focus,
+  textarea:focus,
+  select:focus {
+    @apply outline-none ring-2 ring-orange-500 ring-offset-2;
+  }
+  
+  /* Disable auto-zoom on iOS */
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="password"],
+  input[type="number"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
+@layer components {
+  .safe-area {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .touch-target {
+    @apply min-h-[48px] min-w-[48px];
+  }
+  
+  .btn-primary {
+    @apply bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-semibold py-4 px-6 rounded-xl transition-all transform active:scale-[0.98] touch-target shadow-sm;
+  }
+  
+  .btn-secondary {
+    @apply bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-gray-900 font-semibold py-4 px-6 rounded-xl transition-all transform active:scale-[0.98] touch-target;
+  }
+  
+  .btn-emergency {
+    @apply bg-red-500 hover:bg-red-600 active:bg-red-700 text-white font-bold py-6 px-8 rounded-xl transition-all transform active:scale-[0.98] touch-target shadow-lg;
+  }
+  
+  .btn-safe {
+    @apply bg-green-500 hover:bg-green-600 active:bg-green-700 text-white font-bold py-6 px-8 rounded-xl transition-all transform active:scale-[0.98] touch-target shadow-lg;
+  }
+  
+  .input-field {
+    @apply w-full px-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent text-base bg-white transition-all;
+  }
+  
+  .input-field-error {
+    @apply border-red-500 focus:ring-red-500;
+  }
+  
+  /* Gradient backgrounds */
+  .gradient-orange {
+    @apply bg-gradient-to-br from-orange-400 to-orange-600;
+  }
+  
+  .gradient-green {
+    @apply bg-gradient-to-br from-green-400 to-green-600;
+  }
+  
+  .gradient-blue {
+    @apply bg-gradient-to-br from-blue-400 to-blue-600;
+  }
+  
+  .gradient-red {
+    @apply bg-gradient-to-br from-red-400 to-red-600;
+  }
+}
+
+@layer utilities {
+  /* Animations */
+  @keyframes slide-up {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  
+  @keyframes pulse-scale {
+    0%, 100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.05);
+    }
+  }
+  
+  .animate-slide-up {
+    animation: slide-up 0.3s ease-out;
+  }
+  
+  .animate-fade-in {
+    animation: fade-in 0.2s ease-out;
+  }
+  
+  .animate-pulse-scale {
+    animation: pulse-scale 2s ease-in-out infinite;
+  }
+  
+  /* Haptic feedback simulation */
+  .haptic-light {
+    @apply active:animate-pulse;
+  }
+  
+  .haptic-medium {
+    @apply active:scale-[0.98] transition-transform duration-75;
+  }
+  
+  .haptic-heavy {
+    @apply active:scale-95 transition-transform duration-100;
+  }
+  
+  /* iOS-style backdrop blur */
+  .backdrop-blur-ios {
+    backdrop-filter: saturate(180%) blur(20px);
+    background-color: rgba(255, 255, 255, 0.7);
+  }
+  
+  /* Android-style elevation */
+  .elevation-1 {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+  }
+  
+  .elevation-2 {
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+  }
+  
+  .elevation-3 {
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23);
+  }
+  
+  /* Smooth scrolling */
+  .scroll-smooth {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Hide scrollbar but keep functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}

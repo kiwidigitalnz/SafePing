@@ -1,0 +1,26 @@
+{
+  "name": "safeping",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SafePing - Lone Worker Safety Monitoring Application",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "turbo build",
+    "dev": "turbo dev",
+    "lint": "turbo lint",
+    "typecheck": "turbo typecheck",
+    "test": "turbo test",
+    "clean": "turbo clean"
+  },
+  "devDependencies": {
+    "supabase": "^2.31.4",
+    "turbo": "^2.0.0"
+  },
+  "packageManager": "pnpm@8.15.0",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

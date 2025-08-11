@@ -1,0 +1,15 @@
+<svg width="400" height="400" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Shield with location and signal waves -->
+  <g id="logo-icon">
+    <!-- Shield shape -->
+    <path d="M200 20 C 280 20, 320 60, 320 120 L 320 180 C 320 240, 280 320, 200 380 C 120 320, 80 240, 80 180 L 80 120 C 80 60, 120 20, 200 20 Z" fill="#1A9B9C"/>
+    
+    <!-- Signal waves -->
+    <path d="M 130 70 Q 200 50, 270 70" stroke="white" stroke-width="12" stroke-linecap="round" fill="none"/>
+    <path d="M 150 100 Q 200 85, 250 100" stroke="white" stroke-width="12" stroke-linecap="round" fill="none"/>
+    
+    <!-- Location pin -->
+    <circle cx="200" cy="150" r="20" fill="white"/>
+    <path d="M 200 170 L 200 210 L 180 190 Q 200 220, 220 190 L 200 210" fill="white"/>
+  </g>
+</svg>
