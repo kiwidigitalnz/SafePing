@@ -123,19 +123,18 @@ serve(async (req) => {
     // Create shortened URL for SMS (optional - you could integrate a URL shortener here)
     const shortUrl = invitationUrl // For now, use full URL
 
-    // Prepare SMS message
-    const message = `Hi ${workerName.split(' ')[0]}! 
+    // Prepare SMS message with simplified format
+    const invitationCode = invitationToken.slice(0, 8).toUpperCase()
+    const message = `Hi ${workerName.split(' ')[0]}! 👋
 
-${organizationName || 'SafePing'} has invited you to join their safety team.
+${organizationName || 'SafePing'} has invited you to join their team.
 
-Get started here:
+Tap here to get started:
 ${shortUrl}
 
-Download SafePing and use this invitation code: ${invitationToken.slice(0, 8).toUpperCase()}
+Or use code: ${invitationCode}
 
-This invitation expires in 7 days.
-
-Reply STOP to opt out.`
+This link expires in 7 days.`
 
     // Initialize SMS service
     const smsService = new SMSService(smsConfig)

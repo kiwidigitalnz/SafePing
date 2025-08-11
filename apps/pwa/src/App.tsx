@@ -9,6 +9,8 @@ import ProfilePage from './pages/Profile'
 import HistoryPage from './pages/History'
 import EmergencyPage from './pages/Emergency'
 import { WorkerAuth } from './pages/WorkerAuth'
+import { StaffInvite } from './pages/StaffInvite'
+import { StaffSetup } from './pages/StaffSetup'
 
 // Layout
 import Layout from './components/Layout'
@@ -33,11 +35,12 @@ function App() {
     checkWorkerSession()
   }, [])
 
-  // Handle invitation links (e.g., /invite?token=xxx)
-  const isInvitationLink = location.pathname === '/invite' || 
-                          location.search.includes('token=')
+  // Check if this is an invitation or setup route
+  const isInvitationRoute = location.pathname.startsWith('/invite')
+  const isSetupRoute = location.pathname === '/setup'
+  const isPublicRoute = isInvitationRoute || isSetupRoute
 
-  if (loading) {
+  if (loading && !isPublicRoute) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -49,35 +52,33 @@ function App() {
     )
   }
 
-  // Handle invitation/worker auth flow
-  if (isInvitationLink) {
-    return <WorkerAuth />
+  // Public routes (no auth required)
+  if (isPublicRoute) {
+    return (
+      <Routes>
+        <Route path="/invite/:token" element={<StaffInvite />} />
+        <Route path="/invite" element={<StaffInvite />} />
+        <Route path="/setup" element={<StaffSetup />} />
+        <Route path="*" element={<Navigate to="/auth" replace />} />
+      </Routes>
+    )
   }
 
   // Check for worker session
   const workerSession = workerAuth.getSession()
-  if (workerSession) {
-    // Worker authenticated via PIN/Biometric
+  const isAuthenticated = workerSession || user
+
+  // Not authenticated - show auth page
+  if (!isAuthenticated) {
     return (
-      <Layout>
-        <Routes>
-          <Route path="/" element={<CheckInPage />} />
-          <Route path="/checkin" element={<CheckInPage />} />
-          <Route path="/emergency" element={<EmergencyPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/history" element={<HistoryPage />} />
-          <Route path="/auth/worker" element={<WorkerAuth />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Layout>
+      <Routes>
+        <Route path="/auth" element={<WorkerAuth />} />
+        <Route path="*" element={<Navigate to="/auth" replace />} />
+      </Routes>
     )
   }
 
-  // For PWA, always use WorkerAuth for authentication
-  if (!user) {
-    return <WorkerAuth />
-  }
-
+  // Authenticated - show main app
   return (
     <Layout>
       <Routes>
@@ -86,7 +87,7 @@ function App() {
         <Route path="/emergency" element={<EmergencyPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/history" element={<HistoryPage />} />
-        <Route path="/auth/worker" element={<WorkerAuth />} />
+        <Route path="/auth" element={<Navigate to="/" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>
