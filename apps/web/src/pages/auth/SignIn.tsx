@@ -86,7 +86,7 @@ export function SignIn() {
 
   const handleBack = () => {
     // Use environment variable for landing page URL
-    const landingUrl = import.meta.env.VITE_LANDING_URL || 'http://localhost:5175'
+    const landingUrl = import.meta.env.VITE_LANDING_URL || 'https://safeping.app'
     window.location.href = landingUrl
   }
 
