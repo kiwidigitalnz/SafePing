@@ -2,7 +2,7 @@
 spec:
   name: safeping-production
   region: nyc
-  
+
   # Domains configuration
   domains:
     - domain: safeping.app
@@ -23,20 +23,20 @@ spec:
     - name: safeping-app
       dockerfile_path: Dockerfile
       source_dir: /
-      
+
       # GitHub integration
       github:
         repo: kiwidigitalnz/SafePing
         branch: main
         deploy_on_push: true
-      
+
       # Instance configuration
-      instance_size_slug: basic-xxs  # $4/month
+      instance_size_slug: basic-xxs # $4/month
       instance_count: 1
-      
+
       # HTTP port
       http_port: 80
-      
+
       # Health check
       health_check:
         http_path: /health
@@ -45,18 +45,18 @@ spec:
         timeout_seconds: 5
         success_threshold: 1
         failure_threshold: 3
-      
+
       # Environment variables
       envs:
-        # Supabase Configuration
+        # Supabase Configuration - Use the actual VITE_ prefixed variables
         - key: VITE_SUPABASE_URL
           scope: BUILD_TIME
-          value: ${SUPABASE_URL}
+          value: ${VITE_SUPABASE_URL}
         - key: VITE_SUPABASE_ANON_KEY
           scope: BUILD_TIME
-          value: ${SUPABASE_ANON_KEY}
-        
-        # Application URLs (updated to web.safeping.app)
+          value: ${VITE_SUPABASE_ANON_KEY}
+
+        # Application URLs (hardcoded for production)
         - key: VITE_APP_URL
           scope: BUILD_TIME
           value: https://web.safeping.app
@@ -66,35 +66,43 @@ spec:
         - key: VITE_LANDING_URL
           scope: BUILD_TIME
           value: https://safeping.app
-        
+
         # Contact Information
         - key: VITE_CONTACT_EMAIL
           scope: BUILD_TIME
           value: legal@safeping.app
-        
+
         # Google OAuth
         - key: VITE_GOOGLE_CLIENT_ID
           scope: BUILD_TIME
-          value: ${GOOGLE_CLIENT_ID}
-        
+          value: ${VITE_GOOGLE_CLIENT_ID}
+
         # Stripe
         - key: VITE_STRIPE_PUBLIC_KEY
           scope: BUILD_TIME
-          value: ${STRIPE_PUBLIC_KEY}
-        
+          value: ${VITE_STRIPE_PUBLIC_KEY}
+
         # Push Notifications
         - key: VITE_VAPID_PUBLIC_KEY
           scope: BUILD_TIME
-          value: ${VAPID_PUBLIC_KEY}
-        
+          value: ${VITE_VAPID_PUBLIC_KEY}
+
+        # Analytics
+        - key: VITE_ENABLE_ANALYTICS
+          scope: BUILD_TIME
+          value: ${VITE_ENABLE_ANALYTICS}
+        - key: VITE_GA_TRACKING_ID
+          scope: BUILD_TIME
+          value: ${VITE_GA_TRACKING_ID}
+
         # Build configuration
         - key: NODE_ENV
           scope: BUILD_TIME
           value: production
-        
+
       # Build command (handled by Dockerfile)
       build_command: ""
-      
+
       # Run command (handled by Dockerfile)
       run_command: ""
 
@@ -103,10 +111,11 @@ spec:
     - rule: DEPLOYMENT_FAILED
     - rule: DOMAIN_FAILED
     - rule: DEPLOYMENT_LIVE
-
 # Environment variables to set in DigitalOcean dashboard:
-# SUPABASE_URL - Your Supabase project URL
-# SUPABASE_ANON_KEY - Your Supabase anonymous key
-# GOOGLE_CLIENT_ID - Your Google OAuth client ID
-# STRIPE_PUBLIC_KEY - Your Stripe publishable key
-# VAPID_PUBLIC_KEY - Your VAPID public key for push notifications
+# VITE_SUPABASE_URL - Your Supabase project URL (https://zcmtcegxebspzjrrgvtn.supabase.co)
+# VITE_SUPABASE_ANON_KEY - Your Supabase anonymous key
+# VITE_GOOGLE_CLIENT_ID - Your Google OAuth client ID (340509101186-pgr69bv4eq30e93h4bmfajcp4kc1c2i7.apps.googleusercontent.com)
+# VITE_STRIPE_PUBLIC_KEY - Your Stripe publishable key (if using payments)
+# VITE_VAPID_PUBLIC_KEY - Your VAPID public key for push notifications (if using)
+# VITE_ENABLE_ANALYTICS - true or false
+# VITE_GA_TRACKING_ID - Your Google Analytics tracking ID (if using)
