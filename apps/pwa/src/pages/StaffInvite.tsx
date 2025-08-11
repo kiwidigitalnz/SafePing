@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { Shield, Smartphone, Check, AlertCircle, Loader2, ChevronDown, Search, X } from 'lucide-react'
+import { Shield, Check, AlertCircle, Loader2, ChevronDown, Search, X } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { formatPhoneNumber, unformatPhoneNumber, countryCodesData } from '../utils/phoneFormatter'
-import { usePWAInstall } from '../hooks/usePWAInstall'
 
 type VerificationStep = 'loading' | 'verify' | 'success' | 'error'
 
@@ -11,7 +10,6 @@ export function StaffInvite() {
   const navigate = useNavigate()
   const { token } = useParams()
   const [searchParams] = useSearchParams()
-  const { isInstalled } = usePWAInstall()
   
   const [step, setStep] = useState<VerificationStep>('loading')
   const [loading, setLoading] = useState(false)
@@ -26,7 +24,6 @@ export function StaffInvite() {
   
   // User data after verification
   const [userData, setUserData] = useState<any>(null)
-  const [sessionData, setSessionData] = useState<any>(null)
 
   // Generate device ID
   const getDeviceId = () => {
@@ -134,7 +131,6 @@ export function StaffInvite() {
 
   const handleVerificationSuccess = (data: any) => {
     setUserData(data.user)
-    setSessionData(data.session)
     
     // Store session
     localStorage.setItem('safeping_session', JSON.stringify(data.session))

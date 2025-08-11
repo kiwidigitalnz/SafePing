@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Shield, Smartphone, Fingerprint, Check, AlertCircle, Loader2, Download } from 'lucide-react'
+import { Shield, Smartphone, Fingerprint, Check, Download } from 'lucide-react'
 import { PinEntry } from '../components/PinEntry'
 import { BiometricAuth } from '../components/BiometricAuth'
 import InstallPrompt from '../components/InstallPrompt'
