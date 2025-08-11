@@ -94,9 +94,9 @@ cd apps/landing && npm run build
 
 2. **Verify Production Environment**
    - Once deployed, test all three apps:
-     - Landing: https://safeping.co.nz
-     - Web App: https://app.safeping.co.nz
-     - PWA: https://pwa.safeping.co.nz
+     - Landing: https://safeping.app
+     - Web App: https://web.safeping.app
+     - PWA: https://my.safeping.app
 
 3. **SMS Configuration**
    - Ensure ClickSend API credentials are set in DigitalOcean environment variables

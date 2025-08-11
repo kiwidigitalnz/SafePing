@@ -67,6 +67,11 @@ spec:
           scope: BUILD_TIME
           value: https://safeping.app
         
+        # Contact Information
+        - key: VITE_CONTACT_EMAIL
+          scope: BUILD_TIME
+          value: legal@safeping.app
+        
         # Google OAuth
         - key: VITE_GOOGLE_CLIENT_ID
           scope: BUILD_TIME
