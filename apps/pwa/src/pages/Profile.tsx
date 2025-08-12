@@ -150,7 +150,7 @@ export default function ProfilePage() {
       {/* App Information */}
       <div className="bg-gray-50 rounded-lg p-4">
         <div className="text-center">
-          <p className="text-xs text-gray-500">SafePing Worker App</p>
+          <p className="text-xs text-gray-500">SafePing Staff App</p>
           <p className="text-xs text-gray-500 mt-1">Version 1.0.0</p>
         </div>
       </div>

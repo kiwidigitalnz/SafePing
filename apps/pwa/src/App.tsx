@@ -2,6 +2,7 @@ import { Routes, Route, useLocation, Navigate } from 'react-router-dom'
 import { useAuthStore } from './store/auth'
 import { useEffect } from 'react'
 import { staffAuth } from './lib/staffAuth'
+import { ErrorBoundary } from './components/ErrorBoundary'
 
 // Pages
 import CheckInPage from './pages/CheckIn'
@@ -16,7 +17,7 @@ import { WelcomePage } from './pages/Welcome'
 // Layout
 import Layout from './components/Layout'
 
-function App() {
+function AppContent() {
   const { user, loading, initialize } = useAuthStore()
   const location = useLocation()
 
@@ -25,15 +26,15 @@ function App() {
   }, [initialize])
 
   useEffect(() => {
-    // Check for worker session on app load
-    const checkWorkerSession = async () => {
+    // Check for staff session on app load
+    const checkStaffSession = async () => {
       const session = await staffAuth.getSession()
       if (session) {
-        // Worker is authenticated, restore session
-        console.log('Worker session restored:', session)
+        // Staff is authenticated, restore session
+        console.log('Staff session restored:', session)
       }
     }
-    checkWorkerSession()
+    checkStaffSession()
   }, [])
 
   // Check if this is a public route
@@ -70,7 +71,7 @@ function App() {
     )
   }
 
-  // Check for worker session
+  // Check for staff session
   const staffSession = staffAuth.getSession()
   const isAuthenticated = staffSession || user
 
@@ -101,6 +102,14 @@ function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>
+  )
+}
+
+function App() {
+  return (
+    <ErrorBoundary>
+      <AppContent />
+    </ErrorBoundary>
   )
 }
 

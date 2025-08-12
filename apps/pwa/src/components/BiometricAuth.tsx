@@ -65,7 +65,7 @@ export function BiometricAuth({
     setError(null)
 
     try {
-      const userIdToUse = userId || localStorage.getItem('worker_user_id') || 'default'
+      const userIdToUse = userId || localStorage.getItem('staff_user_id') || 'default'
       const success = await registerBiometric(userIdToUse)
       
       if (success) {

@@ -152,8 +152,8 @@ export function InvitePage() {
     setUserData(data.user)
     
     // Store session
-    localStorage.setItem('safeping_session', JSON.stringify(data.session))
-    localStorage.setItem('safeping_user', JSON.stringify(data.user))
+    localStorage.setItem('staff_session', JSON.stringify(data.session))
+    localStorage.setItem('staff_user', JSON.stringify(data.user))
     
     setStep('success')
     

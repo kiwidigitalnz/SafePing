@@ -256,7 +256,7 @@ export function OnboardingPage() {
         email: profileData.email,
         onboardingCompleted: true
       }
-      localStorage.setItem('safeping_user', JSON.stringify(updatedUser))
+              localStorage.setItem('staff_user', JSON.stringify(updatedUser))
       
       // Show complete step briefly then redirect
       setCurrentStep('complete')

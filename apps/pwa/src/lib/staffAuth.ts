@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import { getDeviceInfo, getDeviceId } from '../utils/device'
+import { sessionManager } from './sessionManager'
 
 interface StaffSession {
   token: string
@@ -60,6 +61,7 @@ class StaffAuthManager {
   // Save session to localStorage
   private saveSession(session: StaffSession) {
     localStorage.setItem('staff_session', JSON.stringify(session))
+    localStorage.setItem('staff_user_id', session.userId)
     this.authState.session = session
     this.authState.isAuthenticated = true
   }
@@ -67,6 +69,8 @@ class StaffAuthManager {
   // Clear session
   clearSession() {
     localStorage.removeItem('staff_session')
+    localStorage.removeItem('staff_user')
+    localStorage.removeItem('staff_user_id')
     localStorage.removeItem('biometric_credentials')
     localStorage.removeItem('biometric_enabled')
     localStorage.removeItem('last_biometric_auth')
@@ -283,7 +287,7 @@ class StaffAuthManager {
         return { success: false, error: 'Failed to create session' }
       }
 
-      // Save session
+      // Save session using unified session manager
       const session: StaffSession = {
         token: sessionData.session_token,
         refreshToken: sessionData.refresh_token,
@@ -294,8 +298,11 @@ class StaffAuthManager {
       
       this.saveSession(session)
       
-      // Store user info
-      localStorage.setItem('staff_user', JSON.stringify(userData))
+      // Also update unified session manager
+      sessionManager.setSession({
+        ...session,
+        user: userData
+      })
       
       return { success: true }
     } catch (error: any) {
