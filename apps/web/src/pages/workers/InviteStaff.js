@@ -110,29 +110,33 @@ export default function InviteStaffPage() {
                 .single();
             if (createError)
                 throw createError;
-            // Create invitation record
-            const invitationToken = crypto.randomUUID();
-            const { error: inviteError } = await supabase
-                .from('worker_invitations')
-                .insert({
-                user_id: newUser.id,
-                organization_id: user?.organization_id,
-                invited_by: user?.id,
-                invitation_token: invitationToken,
-                phone_number: formattedPhone,
-                status: 'pending',
-                expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days
-            });
+            
+            // Create invitation using the database function
+            const { data: invitationData, error: inviteError } = await supabase
+                .rpc('create_staff_invitation', {
+                    p_user_id: newUser.id,
+                    p_organization_id: user?.organization_id,
+                    p_phone_number: formattedPhone,
+                    p_invited_by: user?.id
+                });
+            
             if (inviteError)
                 throw inviteError;
+            
+            if (!invitationData || invitationData.length === 0) {
+                throw new Error('Failed to create invitation');
+            }
+            
+            const invitation = invitationData[0];
             // Send SMS invitation if requested
             if (formData.sendSMS) {
                 const { error: smsError } = await supabase.functions.invoke('send-worker-invitation', {
                     body: {
                         phoneNumber: formattedPhone,
-                        invitationToken,
+                        invitationToken: invitation.invitation_token,
                         workerName: `${formData.firstName} ${formData.lastName}`,
-                        organizationName: 'SafePing'
+                        organizationName: 'SafePing',
+                        verificationCode: invitation.verification_code
                     }
                 });
                 if (smsError) {
