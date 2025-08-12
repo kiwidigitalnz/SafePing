@@ -261,7 +261,7 @@ export function OnboardingPage() {
       // Show complete step briefly then redirect
       setCurrentStep('complete')
       setTimeout(() => {
-        navigate('/dashboard')
+        navigate('/checkin')
       }, 2000)
       
     } catch (err: any) {

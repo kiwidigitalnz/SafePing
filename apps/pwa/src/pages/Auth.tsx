@@ -7,6 +7,7 @@ import { OtpVerification } from '../components/OtpVerification'
 import InstallPrompt from '../components/InstallPrompt'
 import PermissionsOnboarding from '../components/PermissionsOnboarding'
 import { staffAuth } from '../lib/staffAuth'
+import { offlineAuth } from '../lib/offlineAuth'
 import { useBiometric } from '../hooks/useBiometric'
 import { usePWAInstall } from '../hooks/usePWAInstall'
 import { COUNTRIES, type Country } from '@safeping/phone-utils'
@@ -152,7 +153,7 @@ export function AuthPage() {
         } else {
           setSetupStep('complete')
           setTimeout(() => {
-            navigate('/dashboard')
+            navigate('/checkin')
           }, 2000)
         }
       } else {
@@ -171,16 +172,18 @@ export function AuthPage() {
     setError(null)
 
     try {
-      const result = await staffAuth.validatePin(pin)
+      const result = await offlineAuth.validatePin(pin)
       
       if (result.success) {
-        navigate('/dashboard')
-      } else if (result.pinResetRequired) {
+        navigate('/checkin')
+      } else if (result.data?.pinResetRequired) {
         // PIN reset is required - move to setup flow
         setAuthFlow('setup')
         setSetupStep('pin')
         setPinResetRequired(true)
         setError(null)
+      } else if (result.offline) {
+        setError(result.error || 'You are offline. Please check your connection.')
       } else {
         setError(result.error || 'Invalid PIN')
       }
@@ -203,15 +206,61 @@ export function AuthPage() {
 
     try {
       const fullPhoneNumber = '+' + selectedCountry.dialCode + phoneNumber
-      const result = await staffAuth.sendOTP(fullPhoneNumber)
+      const result = await offlineAuth.sendOTP(fullPhoneNumber)
       
       if (result.success) {
         setOtpSent(true)
         setError(null)
+      } else if (result.offline) {
+        setError(result.error || 'You are offline. Please check your connection.')
       } else {
         setError(result.error || 'Failed to send OTP')
       }
     } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Retry OTP sending with exponential backoff
+  const retryOtpRequest = async (retryCount = 0) => {
+    const maxRetries = 3
+    const baseDelay = 1000 // 1 second
+    
+    if (retryCount >= maxRetries) {
+      setError('Maximum retry attempts reached. Please try again later.')
+      return
+    }
+
+    setLoading(true)
+    setError(null)
+
+    try {
+      const fullPhoneNumber = '+' + selectedCountry.dialCode + phoneNumber
+      const result = await offlineAuth.sendOTP(fullPhoneNumber)
+      
+      if (result.success) {
+        setOtpSent(true)
+        setError(null)
+      } else if (result.offline) {
+        setError(result.error || 'You are offline. Please check your connection.')
+      } else {
+        // If it's a temporary error, retry
+        if (result.error?.includes('temporary') || result.error?.includes('rate limit')) {
+          const delay = baseDelay * Math.pow(2, retryCount)
+          setTimeout(() => retryOtpRequest(retryCount + 1), delay)
+          return
+        }
+        setError(result.error || 'Failed to send OTP')
+      }
+    } catch (err: any) {
+      // Network errors might be temporary, retry
+      if (err.message?.includes('network') || err.message?.includes('fetch')) {
+        const delay = baseDelay * Math.pow(2, retryCount)
+        setTimeout(() => retryOtpRequest(retryCount + 1), delay)
+        return
+      }
       setError(err.message)
     } finally {
       setLoading(false)
@@ -225,10 +274,12 @@ export function AuthPage() {
 
     try {
       const fullPhoneNumber = '+' + selectedCountry.dialCode + phoneNumber
-      const result = await staffAuth.verifyOTP(fullPhoneNumber, code)
+      const result = await offlineAuth.verifyOTP(fullPhoneNumber, code)
       
       if (result.success) {
-        navigate('/dashboard')
+        navigate('/checkin')
+      } else if (result.offline) {
+        setError(result.error || 'You are offline. Please check your connection.')
       } else {
         setError(result.error || 'Invalid code')
       }
@@ -310,10 +361,10 @@ export function AuthPage() {
         return (
           <div className="min-h-screen bg-gray-50 flex items-center justify-center">
             <BiometricAuth
-              onSuccess={() => {
-                setSetupStep('complete')
-                setTimeout(() => navigate('/dashboard'), 2000)
-              }}
+                      onSuccess={() => {
+          setSetupStep('complete')
+          setTimeout(() => navigate('/checkin'), 2000)
+        }}
               onCancel={() => {
                 setSetupStep('complete')
                 setTimeout(() => navigate('/dashboard'), 2000)
@@ -331,7 +382,7 @@ export function AuthPage() {
                 <Shield className="w-8 h-8 text-green-600" />
               </div>
               <h2 className="text-2xl font-bold text-gray-900 mb-2">Setup Complete!</h2>
-              <p className="text-gray-600">Redirecting to dashboard...</p>
+              <p className="text-gray-600">Redirecting to check-in...</p>
             </div>
           </div>
         )
@@ -362,7 +413,7 @@ export function AuthPage() {
               className="h-14 mx-auto mb-4"
             />
             <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome Back</h1>
-            <p className="text-gray-600">Sign in to access your safety dashboard</p>
+            <p className="text-gray-600">Sign in to access your safety check-in</p>
           </div>
 
           <div className="space-y-3">
@@ -484,17 +535,18 @@ export function AuthPage() {
                 />
               </div>
               <div className="bg-white rounded-2xl shadow-lg p-6">
-                <OtpVerification
-                  phoneNumber={'+' + selectedCountry.dialCode + phoneNumber}
-                  onVerify={handleOtpVerification}
-                  onResend={handleOtpRequest}
-                  onCancel={() => {
-                    setOtpSent(false)
-                    setError(null)
-                  }}
-                  error={error || undefined}
-                  loading={loading}
-                />
+                              <OtpVerification
+                phoneNumber={'+' + selectedCountry.dialCode + phoneNumber}
+                onVerify={handleOtpVerification}
+                onResend={handleOtpRequest}
+                onRetry={retryOtpRequest}
+                onCancel={() => {
+                  setOtpSent(false)
+                  setError(null)
+                }}
+                error={error || undefined}
+                loading={loading}
+              />
               </div>
             </div>
           </div>

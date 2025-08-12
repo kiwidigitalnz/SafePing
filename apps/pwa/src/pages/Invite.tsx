@@ -170,8 +170,8 @@ export function InvitePage() {
           } 
         })
       } else {
-        // User already set up, go to dashboard
-        navigate('/dashboard')
+        // User already set up, go to check-in
+        navigate('/checkin')
       }
     }, 2000)
   }

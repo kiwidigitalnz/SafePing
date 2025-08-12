@@ -6,9 +6,10 @@ const DB_VERSION = 1
 // URLs to cache for offline functionality
 const urlsToCache = [
   '/',
-  '/static/js/bundle.js',
-  '/static/css/main.css',
-  '/manifest.json'
+  '/manifest.json',
+  '/safeping-logo.png',
+  '/icon-192.png',
+  '/icon-512.png'
 ]
 
 // Install event - cache resources

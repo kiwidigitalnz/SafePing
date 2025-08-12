@@ -6,6 +6,7 @@ interface OtpVerificationProps {
   phoneNumber: string
   onVerify: (code: string) => void
   onResend: () => void
+  onRetry?: (retryCount?: number) => void
   onCancel?: () => void
   error?: string
   loading?: boolean
@@ -16,6 +17,7 @@ export function OtpVerification({
   phoneNumber,
   onVerify,
   onResend,
+  onRetry,
   onCancel,
   error,
   loading = false,
@@ -211,9 +213,21 @@ export function OtpVerification({
 
         {/* Error Message */}
         {error && (
-          <div className="flex items-center justify-center gap-2 mb-4 text-red-600">
-            <AlertCircle className="w-4 h-4" />
-            <p className="text-sm">{error}</p>
+          <div className="flex flex-col items-center gap-2 mb-4">
+            <div className="flex items-center gap-2 text-red-600">
+              <AlertCircle className="w-4 h-4" />
+              <p className="text-sm">{error}</p>
+            </div>
+            {/* Retry Button */}
+            {onRetry && (
+              <button
+                onClick={() => onRetry()}
+                disabled={loading}
+                className="text-sm text-blue-600 hover:text-blue-700 font-medium disabled:opacity-50 underline"
+              >
+                Try again
+              </button>
+            )}
           </div>
         )}
 

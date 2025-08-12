@@ -222,10 +222,11 @@ class StaffAuthManager {
   // Send OTP for authentication
   async sendOTP(phoneNumber: string): Promise<{ success: boolean; error?: string }> {
     try {
-      const { data, error } = await supabase.functions.invoke('send-worker-otp', {
+      const { data, error } = await supabase.functions.invoke('send-staff-otp', {
         body: {
-          phone_number: phoneNumber,
-          type: 'worker_auth'
+          phoneNumber: phoneNumber,
+          type: 'staff_auth',
+          deviceInfo: getDeviceInfo()
         }
       })
 
@@ -262,7 +263,7 @@ class StaffAuthManager {
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('*')
-        .eq('phone_number', phoneNumber)
+        .eq('phone', phoneNumber)
         .single()
 
       if (userError || !userData) {
