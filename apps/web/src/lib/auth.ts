@@ -36,7 +36,18 @@ const CACHE_DURATION = 5000 // 5 seconds
  */
 export async function getStoredSession(): Promise<Session | null> {
   try {
-    const { data: { session }, error } = await supabase.auth.getSession()
+    // Add timeout to prevent hanging
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Timeout getting session')), 5000)
+    })
+    
+    const sessionPromise = supabase.auth.getSession()
+    
+    const { data: { session }, error } = await Promise.race([
+      sessionPromise,
+      timeoutPromise
+    ])
+    
     if (error) {
       console.error('[Auth] Error getting stored session:', error)
       return null

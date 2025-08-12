@@ -49,10 +49,17 @@ export const useAuthStore = create<AuthState>()(
         
         set({ initialized: true })
         console.log('[Auth Store] Starting initialization...')
+        console.log('[Auth Store] Environment check:', {
+          url: import.meta.env.VITE_SUPABASE_URL || 'NOT SET',
+          hasKey: !!import.meta.env.VITE_SUPABASE_ANON_KEY,
+          keyPreview: import.meta.env.VITE_SUPABASE_ANON_KEY?.substring(0, 20) || 'NOT SET'
+        })
         
         try {
           // Step 1: Check for stored session first (synchronous)
+          console.log('[Auth Store] Calling getStoredSession...')
           const storedSession = await getStoredSession()
+          console.log('[Auth Store] getStoredSession returned:', !!storedSession)
           if (storedSession) {
             console.log('[Auth Store] Found stored session, validating...')
             // We have a stored session, but we still need to validate it
@@ -71,9 +78,11 @@ export const useAuthStore = create<AuthState>()(
             set({ user, loading: false, sessionChecked: true })
           }, 100) // 100ms debounce
           
+          console.log('[Auth Store] Setting up auth state listener...')
           const { data: { subscription } } = onAuthStateChange((user) => {
             debouncedStateChange(user)
           })
+          console.log('[Auth Store] Auth state listener set up')
           
           // Store subscription for cleanup
           ;(get() as any).authSubscription = subscription
@@ -85,7 +94,9 @@ export const useAuthStore = create<AuthState>()(
           }, 10000)
           
           try {
+            console.log('[Auth Store] Calling getCurrentUser...')
             const user = await getCurrentUser()
+            console.log('[Auth Store] getCurrentUser returned:', !!user)
             clearTimeout(timeoutId)
             
             // Mark listener as ready after initial check

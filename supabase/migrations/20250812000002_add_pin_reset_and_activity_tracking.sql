@@ -113,7 +113,10 @@ CREATE OR REPLACE FUNCTION verify_worker_pin(
   p_pin_hash TEXT,
   p_device_id TEXT DEFAULT NULL
 )
-RETURNS JSONB AS $$
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
 DECLARE
   v_user RECORD;
   v_attempts INTEGER;

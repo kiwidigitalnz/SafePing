@@ -63,6 +63,11 @@
     padding-bottom: env(safe-area-inset-bottom);
   }
   
+  .py-safe {
+    padding-top: env(safe-area-inset-top, 1rem);
+    padding-bottom: env(safe-area-inset-bottom, 1rem);
+  }
+  
   .touch-target {
     @apply min-h-[48px] min-w-[48px];
   }

@@ -206,7 +206,7 @@ class StaffAuthManager {
   // Send OTP for authentication
   async sendOTP(phoneNumber: string): Promise<{ success: boolean; error?: string }> {
     try {
-      const { error } = await supabase.functions.invoke('send-verification-code', {
+      const { data, error } = await supabase.functions.invoke('send-worker-otp', {
         body: {
           phone_number: phoneNumber,
           type: 'worker_auth'
@@ -215,6 +215,10 @@ class StaffAuthManager {
 
       if (error) {
         return { success: false, error: error.message }
+      }
+
+      if (!data?.success) {
+        return { success: false, error: data?.error || 'Failed to send OTP' }
       }
 
       return { success: true }
@@ -252,7 +256,7 @@ class StaffAuthManager {
       // Create new session
       const deviceInfo = getDeviceInfo()
       const { data: sessionData, error: sessionError } = await supabase
-        .rpc('create_staff_session', {
+        .rpc('create_staff_session_after_otp', {
           p_user_id: userData.id,
           p_device_id: deviceInfo.deviceId,
           p_device_info: deviceInfo

@@ -503,8 +503,9 @@ export function AuthPage() {
 
       // Phone input screen
       return (
-        <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-teal-50 flex items-center justify-center px-6">
-          <div className="w-full max-w-md">
+        <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-teal-50 flex flex-col">
+          <div className="flex-1 flex items-center justify-center px-6 py-safe">{/* Added py-safe for keyboard */}
+            <div className="w-full max-w-md">
             {/* Back Button */}
             <button
               onClick={() => {
@@ -572,6 +573,8 @@ export function AuthPage() {
                     </div>
                     <input
                       type="tel"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
                       value={phoneNumber}
                       onChange={(e) => {
                         // Only allow numbers
@@ -579,8 +582,9 @@ export function AuthPage() {
                         setPhoneNumber(value)
                       }}
                       placeholder={selectedCountry.dialCode === '1' ? "555 123 4567" : "21 234 5678"}
-                      className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-r-xl focus:border-[#15a2a6] focus:outline-none transition-colors"
+                      className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-r-xl focus:border-[#15a2a6] focus:outline-none transition-colors text-base"
                       autoFocus
+                      autoComplete="tel-national"
                     />
                   </div>
                 </div>
@@ -629,7 +633,7 @@ export function AuthPage() {
                     setCountrySearch('')
                   }}
                 />
-                <div className="relative w-full max-h-[70vh] bg-white rounded-t-3xl shadow-2xl animate-slide-up">
+                <div className="relative w-full max-h-[80vh] bg-white rounded-t-3xl shadow-2xl animate-slide-up safe-area-bottom">
                   {/* Modal Header */}
                   <div className="sticky top-0 bg-white border-b border-gray-200 p-4">
                     <h3 className="text-lg font-semibold text-gray-900 mb-3">Select Country</h3>
@@ -673,7 +677,9 @@ export function AuthPage() {
                 </div>
               </div>
             )}
+            </div>
           </div>
+        </div>
         )
 
     default:
