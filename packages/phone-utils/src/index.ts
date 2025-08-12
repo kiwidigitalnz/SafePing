@@ -11,12 +11,13 @@ export * from './formatter';
 export * from './validator';
 
 // Re-export commonly used functions at top level
+export { COUNTRIES, getDefaultCountry } from './countries';
 export { 
   formatPhoneForDisplay,
   formatPhoneForSMS,
-  formatPhoneForStorage,
+  formatPhoneForStorage
+} from './formatter';
+export {
   isValidPhoneNumber,
-  isValidForSMS,
-  COUNTRIES,
-  getDefaultCountry 
-} from './countries';
+  isValidForSMS
+} from './validator';
