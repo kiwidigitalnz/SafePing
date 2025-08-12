@@ -84,7 +84,7 @@ class StaffAuthManager {
     try {
       const deviceInfo = getDeviceInfo()
       
-      const { data, error } = await supabase.functions.invoke('verify-worker-device', {
+      const { data, error } = await supabase.functions.invoke('verify-staff', {
         body: {
           invitationToken,
           verificationCode,
@@ -109,7 +109,7 @@ class StaffAuthManager {
         this.saveSession(session)
         
         // Store user info
-        localStorage.setItem('worker_user', JSON.stringify(data.user))
+        localStorage.setItem('staff_user', JSON.stringify(data.user))
         
         return {
           success: true,
@@ -132,7 +132,7 @@ class StaffAuthManager {
     }
 
     try {
-      const { data, error } = await supabase.functions.invoke('validate-worker-pin/set', {
+      const { data, error } = await supabase.functions.invoke('validate-staff-pin', {
         body: {
           sessionToken: this.authState.session.token,
           newPin: pin,
@@ -163,7 +163,7 @@ class StaffAuthManager {
     }
 
     try {
-      const { data, error } = await supabase.functions.invoke('validate-worker-pin/validate', {
+      const { data, error } = await supabase.functions.invoke('validate-staff-pin', {
         body: {
           sessionToken: this.authState.session.token,
           pin,
@@ -263,7 +263,7 @@ class StaffAuthManager {
       this.saveSession(session)
       
       // Store user info
-      localStorage.setItem('worker_user', JSON.stringify(userData))
+      localStorage.setItem('staff_user', JSON.stringify(userData))
       
       return { success: true }
     } catch (error: any) {
@@ -310,7 +310,7 @@ class StaffAuthManager {
 
   // Get current user
   getCurrentUser() {
-    const userData = localStorage.getItem('worker_user')
+    const userData = localStorage.getItem('staff_user')
     if (userData) {
       try {
         return JSON.parse(userData)

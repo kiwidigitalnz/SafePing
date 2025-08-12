@@ -92,7 +92,7 @@ export function AuthPage() {
         defaultCountryCode = countryMap[countryCode]
       }
       
-      const detectedCountry = countryCodesData.find(c => c.code === defaultCountryCode)
+      const detectedCountry = COUNTRIES.find(c => c.dialCode === defaultCountryCode)
       if (detectedCountry) {
         setSelectedCountry(detectedCountry)
       }
@@ -455,7 +455,7 @@ export function AuthPage() {
                       <div className="flex items-center space-x-3">
                         <span className="text-2xl">{selectedCountry.flag}</span>
                         <div className="text-left">
-                          <p className="font-medium text-gray-900">{selectedCountry.country}</p>
+                          <p className="font-medium text-gray-900">{selectedCountry.name}</p>
                           <p className="text-sm text-gray-500">{selectedCountry.code}</p>
                         </div>
                       </div>
