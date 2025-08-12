@@ -86,18 +86,21 @@ serve(async (req) => {
     // Prepare SMS message with 6-digit verification code
     const message = `Hi ${workerName.split(' ')[0]}! 👋
 
-${organizationName || 'SafePing'} has invited you to join their team.
+${organizationName || 'SafePing'} has invited you to join their team on the SafePing mobile app.
 
 Your verification code is: ${verificationCode}
 
 To get started:
-1. Install SafePing app
-2. Enter your phone number
-3. Enter the code above
+1. Install SafePing mobile app
+2. Open the app and tap "I have an invitation"
+3. Enter your phone number
+4. Enter the code above
 
-Or tap here: ${invitationUrl}
+Or tap this link on your phone: ${invitationUrl}
 
-This code expires in 7 days.`
+This code expires in 7 days.
+
+Note: This invitation is for the mobile app only, not the web dashboard.`
 
     // Initialize SMS service
     const smsService = new SMSService(smsConfig)
