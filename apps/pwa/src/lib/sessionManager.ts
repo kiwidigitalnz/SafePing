@@ -217,4 +217,3 @@ class SessionManager {
 }
 
 export const sessionManager = SessionManager.getInstance()
-export type { UnifiedSession, SessionStatus }
