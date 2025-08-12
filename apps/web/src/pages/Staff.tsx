@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { Search, Users, UserPlus, MoreVertical, Edit, Trash2, Eye, UserCheck, UserX, MessageSquare, Send } from 'lucide-react'
+import { Search, Users, UserPlus, MoreVertical, Edit, Trash2, Eye, UserCheck, UserX, MessageSquare, Send, KeyRound, Clock } from 'lucide-react'
 import { useAuthStore } from '../store/auth'
 import { StaffForm } from '../components/StaffForm'
 import { StaffDetail } from '../components/StaffDetail'
@@ -41,6 +41,7 @@ export function Staff() {
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const [sendingSMS, setSendingSMS] = useState<string | null>(null)
+  const [resettingPIN, setResettingPIN] = useState<string | null>(null)
 
   // Fetch all users
   const { data: allUsers = [], isLoading } = useQuery({
@@ -177,6 +178,47 @@ export function Staff() {
   const handleCancel = () => {
     setViewMode('list')
     setSelectedStaff(null)
+  }
+
+  const handleResetPIN = async (staff: StaffMember) => {
+    if (!confirm(`Are you sure you want to reset the PIN for ${staff.first_name} ${staff.last_name}? They will need to create a new PIN on their next login.`)) {
+      return
+    }
+
+    setResettingPIN(staff.id)
+    setOpenMenuId(null)
+
+    try {
+      // Call the reset_worker_pin function
+      const { data, error } = await supabase
+        .rpc('reset_worker_pin', {
+          p_user_id: staff.id,
+          p_admin_id: user?.id
+        })
+
+      if (error) {
+        console.error('Error resetting PIN:', error)
+        throw error
+      }
+
+      if (data && !data.success) {
+        throw new Error(data.error || 'Failed to reset PIN')
+      }
+
+      showSuccess(
+        'PIN reset successfully',
+        `${staff.first_name} ${staff.last_name}'s PIN has been reset. They will be prompted to create a new PIN on their next login.`
+      )
+
+      // Refresh the user list
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+    } catch (error: any) {
+      console.error('Error resetting PIN:', error)
+      const errorMessage = error.message || error.error || 'Unknown error'
+      showError('Failed to reset PIN', errorMessage)
+    } finally {
+      setResettingPIN(null)
+    }
   }
 
   const handleResendSMS = async (staff: StaffMember) => {
@@ -564,6 +606,32 @@ export function Staff() {
                             </span>
                           )}
                         </div>
+                        
+                        {/* Last Activity */}
+                        {(staff.last_login_at || staff.last_activity_at) && (
+                          <div className="mt-2 flex items-center space-x-3 text-xs text-gray-500">
+                            <Clock className="w-3 h-3" />
+                            <span>
+                              Last active: {
+                                staff.last_activity_at ? 
+                                  new Date(staff.last_activity_at).toLocaleString('en-NZ', {
+                                    day: '2-digit',
+                                    month: 'short',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  }) : 
+                                  staff.last_login_at ?
+                                    new Date(staff.last_login_at).toLocaleString('en-NZ', {
+                                      day: '2-digit',
+                                      month: 'short',
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    }) :
+                                    'Never'
+                              }
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
                     
@@ -609,6 +677,26 @@ export function Staff() {
                                   <>
                                     <MessageSquare className="w-4 h-4 mr-3 text-blue-500" />
                                     Resend SMS Invitation
+                                  </>
+                                )}
+                              </button>
+                            )}
+                            
+                            {staff.pin_hash && (
+                              <button
+                                onClick={() => handleResetPIN(staff)}
+                                disabled={resettingPIN === staff.id}
+                                className="flex items-center w-full px-4 py-2.5 text-sm text-orange-600 hover:bg-gradient-to-r hover:from-orange-50 hover:to-orange-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                              >
+                                {resettingPIN === staff.id ? (
+                                  <>
+                                    <div className="w-4 h-4 mr-3 border-2 border-orange-600 border-t-transparent rounded-full animate-spin" />
+                                    Resetting...
+                                  </>
+                                ) : (
+                                  <>
+                                    <KeyRound className="w-4 h-4 mr-3 text-orange-500" />
+                                    Reset PIN
                                   </>
                                 )}
                               </button>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Shield, Smartphone, MessageSquare, Fingerprint, Search, ChevronDown, Check } from 'lucide-react'
-import { PinEntry } from '../components/PinEntry'
+import { Shield, MessageSquare, Fingerprint, Search, ChevronDown, Check } from 'lucide-react'
+import { FlexiblePinEntry } from '../components/FlexiblePinEntry'
 import { BiometricAuth } from '../components/BiometricAuth'
 import { OtpVerification } from '../components/OtpVerification'
 import InstallPrompt from '../components/InstallPrompt'
@@ -9,7 +9,7 @@ import PermissionsOnboarding from '../components/PermissionsOnboarding'
 import { staffAuth } from '../lib/staffAuth'
 import { useBiometric } from '../hooks/useBiometric'
 import { usePWAInstall } from '../hooks/usePWAInstall'
-import { formatPhoneForDisplay, formatPhoneForStorage, COUNTRIES, type Country } from '@safeping/phone-utils'
+import { COUNTRIES, type Country } from '@safeping/phone-utils'
 
 type AuthMethod = 'biometric' | 'pin' | 'otp'
 type AuthFlow = 'invitation' | 'signin' | 'setup'
@@ -27,11 +27,12 @@ export function AuthPage() {
   const [setupStep, setSetupStep] = useState<SetupStep>('install')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [pinResetRequired, setPinResetRequired] = useState(false)
 
   // Invitation data
   const [invitationToken, setInvitationToken] = useState<string | null>(null)
   const [phoneNumber, setPhoneNumber] = useState('')
-  // const [verificationCode, setVerificationCode] = useState('')
+  const [otpSent, setOtpSent] = useState(false)
   
   // Country selection
   const [selectedCountry, setSelectedCountry] = useState(COUNTRIES[0])
@@ -174,6 +175,12 @@ export function AuthPage() {
       
       if (result.success) {
         navigate('/dashboard')
+      } else if (result.pinResetRequired) {
+        // PIN reset is required - move to setup flow
+        setAuthFlow('setup')
+        setSetupStep('pin')
+        setPinResetRequired(true)
+        setError(null)
       } else {
         setError(result.error || 'Invalid PIN')
       }
@@ -195,11 +202,12 @@ export function AuthPage() {
     setError(null)
 
     try {
-      const fullPhoneNumber = selectedCountry.dialCode + formatPhoneForStorage(phoneNumber)
+      const fullPhoneNumber = '+' + selectedCountry.dialCode + phoneNumber
       const result = await staffAuth.sendOTP(fullPhoneNumber)
       
       if (result.success) {
-        setAuthMethod('otp')
+        setOtpSent(true)
+        setError(null)
       } else {
         setError(result.error || 'Failed to send OTP')
       }
@@ -216,7 +224,7 @@ export function AuthPage() {
     setError(null)
 
     try {
-      const fullPhoneNumber = selectedCountry.dialCode + formatPhoneForStorage(phoneNumber)
+      const fullPhoneNumber = '+' + selectedCountry.dialCode + phoneNumber
       const result = await staffAuth.verifyOTP(fullPhoneNumber, code)
       
       if (result.success) {
@@ -285,12 +293,15 @@ export function AuthPage() {
       case 'pin':
         return (
           <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-            <PinEntry
+            <FlexiblePinEntry
               onSubmit={handlePinSetup}
-              title="Create Your PIN"
+              title={pinResetRequired ? "Create New PIN" : "Create Your PIN"}
               isSetup={true}
               error={error || undefined}
               loading={loading}
+              minLength={4}
+              maxLength={6}
+              pinResetRequired={pinResetRequired}
             />
           </div>
         )
@@ -331,14 +342,27 @@ export function AuthPage() {
   if (!authMethod) {
     // Auth method selection
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-6">
+      <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-teal-50 flex items-center justify-center px-6">
         <div className="w-full max-w-sm">
+          {/* Back to Welcome */}
+          <button
+            onClick={() => navigate('/')}
+            className="mb-6 text-sm text-gray-600 hover:text-[#15a2a6] flex items-center space-x-1 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            <span>Back</span>
+          </button>
+
           <div className="text-center mb-8">
-            <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Shield className="w-10 h-10 text-blue-600" />
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">SafePing</h1>
-            <p className="text-gray-600">Choose your authentication method</p>
+            <img 
+              src="/safeping-logo-full.png" 
+              alt="SafePing" 
+              className="h-14 mx-auto mb-4"
+            />
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome Back</h1>
+            <p className="text-gray-600">Sign in to access your safety dashboard</p>
           </div>
 
           <div className="space-y-3">
@@ -346,9 +370,9 @@ export function AuthPage() {
             {biometricAvailable && staffAuth.isBiometricEnabled() && (
               <button
                 onClick={() => setAuthMethod('biometric')}
-                className="w-full flex items-center gap-4 p-4 bg-white rounded-lg border-2 border-gray-200 hover:border-blue-500 transition-colors"
+                className="w-full flex items-center gap-4 p-4 bg-white rounded-xl border-2 border-gray-200 hover:border-[#15a2a6] shadow-sm hover:shadow-md transition-all transform hover:scale-[1.01]"
               >
-                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center">
                   <Fingerprint className="w-6 h-6 text-blue-600" />
                 </div>
                 <div className="text-left">
@@ -362,14 +386,14 @@ export function AuthPage() {
             {staffAuth.isPinSetup() && (
               <button
                 onClick={() => setAuthMethod('pin')}
-                className="w-full flex items-center gap-4 p-4 bg-white rounded-lg border-2 border-gray-200 hover:border-blue-500 transition-colors"
+                className="w-full flex items-center gap-4 p-4 bg-white rounded-xl border-2 border-gray-200 hover:border-[#15a2a6] shadow-sm hover:shadow-md transition-all transform hover:scale-[1.01]"
               >
-                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-green-200 rounded-full flex items-center justify-center">
                   <Shield className="w-6 h-6 text-green-600" />
                 </div>
                 <div className="text-left">
                   <p className="font-semibold text-gray-900">PIN Code</p>
-                  <p className="text-sm text-gray-600">Enter your 6-digit PIN</p>
+                  <p className="text-sm text-gray-600">Enter your 4-6 digit PIN</p>
                 </div>
               </button>
             )}
@@ -380,16 +404,39 @@ export function AuthPage() {
                 // Show phone input screen
                 setAuthMethod('otp')
               }}
-              className="w-full flex items-center gap-4 p-4 bg-white rounded-lg border-2 border-gray-200 hover:border-blue-500 transition-colors"
+              className="w-full flex items-center gap-4 p-4 bg-white rounded-xl border-2 border-gray-200 hover:border-[#15a2a6] shadow-sm hover:shadow-md transition-all transform hover:scale-[1.01]"
             >
-              <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                <MessageSquare className="w-6 h-6 text-purple-600" />
+              <div className="w-12 h-12 bg-gradient-to-br from-teal-100 to-teal-200 rounded-full flex items-center justify-center">
+                <MessageSquare className="w-6 h-6 text-teal-600" />
               </div>
               <div className="text-left">
                 <p className="font-semibold text-gray-900">SMS Code</p>
                 <p className="text-sm text-gray-600">Receive a code via SMS</p>
               </div>
             </button>
+          </div>
+
+          {/* Help Section */}
+          <div className="mt-8 space-y-3">
+            <div className="text-center">
+              <button
+                onClick={() => navigate('/')}
+                className="text-sm text-gray-600 hover:text-[#15a2a6] transition-colors"
+              >
+                Not you? Switch account
+              </button>
+            </div>
+            
+            <div className="text-center">
+              <a 
+                href="https://safeping.com/support" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-sm text-gray-600 hover:text-[#15a2a6] transition-colors"
+              >
+                Forgot PIN? Contact your administrator
+              </a>
+            </div>
           </div>
         </div>
       </div>
@@ -411,120 +458,166 @@ export function AuthPage() {
     case 'pin':
       return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <PinEntry
+          <FlexiblePinEntry
             onSubmit={handlePinAuth}
             onCancel={() => setAuthMethod(null)}
+            onForgotPin={() => setAuthMethod('otp')}
             error={error || undefined}
             loading={loading}
+            minLength={4}
+            maxLength={6}
           />
         </div>
       )
 
     case 'otp':
-      if (!phoneNumber) {
-        // Phone number input with country selector
+      // Show OTP verification if code was sent, otherwise show phone input
+      if (otpSent) {
         return (
-          <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex items-center justify-center px-6">
+          <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-teal-50 flex items-center justify-center px-6">
             <div className="w-full max-w-md">
-              {/* Header */}
-              <div className="text-center mb-8">
-                <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-                  <Smartphone className="text-white" size={36} />
-                </div>
-                <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                  Enter Your Phone Number
-                </h2>
-                <p className="text-gray-600">
-                  We'll send you a verification code via SMS
-                </p>
+              <div className="text-center mb-6">
+                <img 
+                  src="/safeping-logo-full.png" 
+                  alt="SafePing" 
+                  className="h-14 mx-auto"
+                />
               </div>
-
-              {/* Phone Input Card */}
               <div className="bg-white rounded-2xl shadow-lg p-6">
-                <div className="space-y-4">
-                  {/* Country Selector */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Country
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => setShowCountryPicker(true)}
-                      className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl hover:border-blue-400 transition-colors"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <span className="text-2xl">{selectedCountry.flag}</span>
-                        <div className="text-left">
-                          <p className="font-medium text-gray-900">{selectedCountry.name}</p>
-                          <p className="text-sm text-gray-500">{selectedCountry.code}</p>
-                        </div>
-                      </div>
-                      <ChevronDown className="text-gray-400" size={20} />
-                    </button>
-                  </div>
-
-                  {/* Phone Number Input */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Phone Number
-                    </label>
-                    <div className="flex space-x-2">
-                      <div className="flex items-center px-3 bg-gray-100 rounded-l-xl border-2 border-r-0 border-gray-200">
-                        <span className="text-lg">{selectedCountry.flag}</span>
-                        <span className="ml-2 font-medium text-gray-700">{selectedCountry.code}</span>
-                      </div>
-                      <input
-                        type="tel"
-                        value={phoneNumber}
-                        onChange={(e) => setPhoneNumber(formatPhoneForDisplay(e.target.value))}
-                        placeholder="(555) 123-4567"
-                        className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-r-xl focus:border-blue-400 focus:outline-none transition-colors"
-                        autoFocus
-                      />
-                    </div>
-                  </div>
-
-                  {/* Error Message */}
-                  {error && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                      <p className="text-red-700 text-sm">{error}</p>
-                    </div>
-                  )}
-
-                  {/* Submit Button */}
-                  <button
-                    onClick={handleOtpRequest}
-                    disabled={loading || !phoneNumber}
-                    className="w-full py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-xl hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-[1.02] flex items-center justify-center space-x-2"
-                  >
-                    {loading ? (
-                      <>
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        <span>Sending Code...</span>
-                      </>
-                    ) : (
-                      <>
-                        <MessageSquare size={20} />
-                        <span>Send Verification Code</span>
-                      </>
-                    )}
-                  </button>
-
-                  {/* Back Button */}
-                  <button
-                    onClick={() => setAuthMethod(null)}
-                    className="w-full py-3 text-gray-600 hover:text-gray-900 font-medium transition-colors"
-                  >
-                    Back to options
-                  </button>
-                </div>
+                <OtpVerification
+                  phoneNumber={'+' + selectedCountry.dialCode + phoneNumber}
+                  onVerify={handleOtpVerification}
+                  onResend={handleOtpRequest}
+                  onCancel={() => {
+                    setOtpSent(false)
+                    setError(null)
+                  }}
+                  error={error || undefined}
+                  loading={loading}
+                />
               </div>
+            </div>
+          </div>
+        )
+      }
 
-              {/* Security Note */}
-              <p className="text-center text-sm text-gray-500 mt-6">
-                Your phone number is encrypted and never shared
+      // Phone input screen
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-teal-50 flex items-center justify-center px-6">
+          <div className="w-full max-w-md">
+            {/* Back Button */}
+            <button
+              onClick={() => {
+                setAuthMethod(null)
+                setPhoneNumber('')
+                setError(null)
+                setOtpSent(false)
+              }}
+              className="mb-6 text-sm text-gray-600 hover:text-[#15a2a6] flex items-center space-x-1 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              <span>Back</span>
+            </button>
+
+            {/* Header */}
+            <div className="text-center mb-8">
+              <img 
+                src="/safeping-logo-full.png" 
+                alt="SafePing" 
+                className="h-14 mx-auto mb-4"
+              />
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                Sign In with SMS
+              </h2>
+              <p className="text-gray-600">
+                We'll send you a verification code
               </p>
             </div>
+
+            {/* Phone Input Card */}
+            <div className="bg-white rounded-2xl shadow-lg p-6">
+              <div className="space-y-4">
+                {/* Country Selector */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Country
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowCountryPicker(true)}
+                    className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl hover:border-[#15a2a6] transition-colors"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <span className="text-2xl">{selectedCountry.flag}</span>
+                      <div className="text-left">
+                        <p className="font-medium text-gray-900">{selectedCountry.name}</p>
+                        <p className="text-sm text-gray-500">+{selectedCountry.dialCode}</p>
+                      </div>
+                    </div>
+                    <ChevronDown className="text-gray-400" size={20} />
+                  </button>
+                </div>
+
+                {/* Phone Number Input */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Phone Number
+                  </label>
+                  <div className="flex space-x-2">
+                    <div className="flex items-center px-3 bg-gray-100 rounded-l-xl border-2 border-r-0 border-gray-200">
+                      <span className="text-lg">{selectedCountry.flag}</span>
+                      <span className="ml-2 font-medium text-gray-700">+{selectedCountry.dialCode}</span>
+                    </div>
+                    <input
+                      type="tel"
+                      value={phoneNumber}
+                      onChange={(e) => {
+                        // Only allow numbers
+                        const value = e.target.value.replace(/\D/g, '')
+                        setPhoneNumber(value)
+                      }}
+                      placeholder={selectedCountry.dialCode === '1' ? "555 123 4567" : "21 234 5678"}
+                      className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-r-xl focus:border-[#15a2a6] focus:outline-none transition-colors"
+                      autoFocus
+                    />
+                  </div>
+                </div>
+
+                {/* Error Message */}
+                {error && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                    <p className="text-red-700 text-sm">{error}</p>
+                  </div>
+                )}
+
+                {/* Submit Button */}
+                <button
+                  onClick={handleOtpRequest}
+                  disabled={loading || !phoneNumber || phoneNumber.length < 6}
+                  className="w-full py-4 bg-gradient-to-r from-[#15a2a6] to-teal-500 text-white font-semibold rounded-xl hover:from-[#128a8e] hover:to-teal-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-[1.02] flex items-center justify-center space-x-2"
+                >
+                  {loading ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Sending Code...</span>
+                    </>
+                  ) : (
+                    <>
+                      <MessageSquare size={20} />
+                      <span>Send Verification Code</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Security Note */}
+            <p className="text-center text-sm text-gray-500 mt-6">
+              Your phone number is encrypted and never shared
+            </p>
+          </div>
 
             {/* Country Picker Modal */}
             {showCountryPicker && (
@@ -582,23 +675,6 @@ export function AuthPage() {
             )}
           </div>
         )
-      }
-
-      return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <OtpVerification
-            phoneNumber={phoneNumber}
-            onVerify={handleOtpVerification}
-            onResend={handleOtpRequest}
-            onCancel={() => {
-              setPhoneNumber('')
-              setAuthMethod(null)
-            }}
-            error={error || undefined}
-            loading={loading}
-          />
-        </div>
-      )
 
     default:
       return null

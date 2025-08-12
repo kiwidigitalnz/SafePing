@@ -197,9 +197,9 @@ export function InvitePage() {
   // Success state
   if (step === 'success') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-50 flex items-center justify-center px-6">
+      <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-teal-50 flex items-center justify-center px-6">
         <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full text-center transform transition-all animate-fade-in">
-          <div className="w-24 h-24 bg-gradient-to-br from-green-400 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse-scale">
+          <div className="w-24 h-24 bg-gradient-to-br from-[#15a2a6] to-teal-500 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse-scale">
             <Check className="w-12 h-12 text-white" />
           </div>
           <h2 className="text-3xl font-bold text-gray-900 mb-3">
@@ -212,9 +212,9 @@ export function InvitePage() {
             Setting up your account...
           </p>
           <div className="flex items-center justify-center space-x-2 text-sm text-gray-400">
-            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+            <div className="w-2 h-2 bg-[#15a2a6] rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+            <div className="w-2 h-2 bg-[#15a2a6] rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+            <div className="w-2 h-2 bg-[#15a2a6] rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
           </div>
         </div>
       </div>
@@ -255,9 +255,11 @@ export function InvitePage() {
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-20 h-20 bg-gradient-to-br from-[#15a2a6] to-teal-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <Shield className="text-white" size={36} />
-          </div>
+          <img 
+            src="/safeping-logo-full.png" 
+            alt="SafePing" 
+            className="h-14 mx-auto mb-4"
+          />
           <h2 className="text-3xl font-bold text-gray-900 mb-2">
             Join SafePing
           </h2>

@@ -1,7 +1,7 @@
 {
-  "name": "SafePing Worker",
+  "name": "SafePing - Your Safety Companion",
   "short_name": "SafePing",
-  "description": "Safety check-in app for lone workers",
+  "description": "Check in regularly to let your team know you're safe. Quick check-ins, emergency SOS, works offline.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",

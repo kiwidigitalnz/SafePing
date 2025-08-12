@@ -11,6 +11,7 @@ import EmergencyPage from './pages/Emergency'
 import { AuthPage } from './pages/Auth'
 import { InvitePage } from './pages/Invite'
 import { OnboardingPage } from './pages/Onboarding'
+import { WelcomePage } from './pages/Welcome'
 
 // Layout
 import Layout from './components/Layout'
@@ -36,16 +37,18 @@ function App() {
   }, [])
 
   // Check if this is a public route
+  const isWelcomeRoute = location.pathname === '/' || location.pathname === '/welcome'
   const isInvitationRoute = location.pathname.startsWith('/invite')
   const isOnboardingRoute = location.pathname === '/onboarding'
-  const isPublicRoute = isInvitationRoute || isOnboardingRoute
+  const isAuthRoute = location.pathname === '/auth'
+  const isPublicRoute = isWelcomeRoute || isInvitationRoute || isOnboardingRoute || isAuthRoute
 
   if (loading && !isPublicRoute) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-teal-50 flex items-center justify-center">
         <div className="text-center">
-          <img src="/logo.svg" alt="SafePing" className="w-16 h-16 mx-auto mb-4" />
-          <div className="w-8 h-8 border-4 border-[#1A9B9C] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <img src="/safeping-logo-full.png" alt="SafePing" className="h-16 mx-auto mb-6" />
+          <div className="w-8 h-8 border-4 border-[#15a2a6] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">Loading SafePing...</p>
         </div>
       </div>
@@ -56,10 +59,13 @@ function App() {
   if (isPublicRoute) {
     return (
       <Routes>
+        <Route path="/" element={<WelcomePage />} />
+        <Route path="/welcome" element={<WelcomePage />} />
+        <Route path="/auth" element={<AuthPage />} />
         <Route path="/invite/:token" element={<InvitePage />} />
         <Route path="/invite" element={<InvitePage />} />
         <Route path="/onboarding" element={<OnboardingPage />} />
-        <Route path="*" element={<Navigate to="/auth" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     )
   }
@@ -68,12 +74,16 @@ function App() {
   const staffSession = staffAuth.getSession()
   const isAuthenticated = staffSession || user
 
-  // Not authenticated - show auth page
+  // Not authenticated - show welcome page
   if (!isAuthenticated) {
     return (
       <Routes>
+        <Route path="/" element={<WelcomePage />} />
+        <Route path="/welcome" element={<WelcomePage />} />
         <Route path="/auth" element={<AuthPage />} />
-        <Route path="*" element={<Navigate to="/auth" replace />} />
+        <Route path="/invite/:token" element={<InvitePage />} />
+        <Route path="/invite" element={<InvitePage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     )
   }

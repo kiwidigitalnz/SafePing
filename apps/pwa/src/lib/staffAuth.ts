@@ -157,7 +157,7 @@ class StaffAuthManager {
   }
 
   // Validate PIN
-  async validatePin(pin: string): Promise<{ success: boolean; error?: string; attemptsRemaining?: number }> {
+  async validatePin(pin: string): Promise<{ success: boolean; error?: string; attemptsRemaining?: number; pinResetRequired?: boolean }> {
     if (!this.authState.session) {
       return { success: false, error: 'No active session' }
     }
@@ -178,7 +178,18 @@ class StaffAuthManager {
       if (data.success) {
         // Update last auth time
         localStorage.setItem('last_pin_auth', new Date().toISOString())
+        // Update last activity in database
+        await supabase.rpc('update_last_activity', { p_user_id: this.authState.session.userId })
         return { success: true }
+      }
+
+      // Check if PIN reset is required
+      if (data.pin_reset_required) {
+        return {
+          success: false,
+          error: 'PIN reset required',
+          pinResetRequired: true
+        }
       }
 
       return { 
