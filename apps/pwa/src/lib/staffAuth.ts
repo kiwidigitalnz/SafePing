@@ -102,7 +102,9 @@ class StaffAuthManager {
             const parsed = JSON.parse((error as any).body)
             if (parsed?.error) errorMessage = parsed.error
           }
-        } catch {}
+        } catch {
+          // Ignore parsing errors, use default error message
+        }
         return { success: false, error: errorMessage }
       }
 
