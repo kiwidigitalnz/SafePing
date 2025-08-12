@@ -84,6 +84,8 @@ class StaffAuthManager {
     try {
       const deviceInfo = getDeviceInfo()
       
+
+
       const { data, error } = await supabase.functions.invoke('verify-staff', {
         body: {
           invitationToken,
@@ -93,7 +95,19 @@ class StaffAuthManager {
       })
 
       if (error) {
-        return { success: false, error: error.message }
+        // Try to parse more detailed error from response
+        let errorMessage = error.message || 'Verification failed'
+        try {
+          if ((error as any)?.body && typeof (error as any).body === 'string') {
+            const parsed = JSON.parse((error as any).body)
+            if (parsed?.error) errorMessage = parsed.error
+          }
+        } catch {}
+        return { success: false, error: errorMessage }
+      }
+
+      if (data?.error) {
+        return { success: false, error: data.error }
       }
 
       if (data.success) {

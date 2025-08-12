@@ -566,8 +566,10 @@ export function AuthPage() {
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Phone Number
                   </label>
-                  <div className="flex space-x-2">
-                    <div className="flex items-center px-3 bg-gray-100 rounded-l-xl border-2 border-r-0 border-gray-200">
+
+                  {/* Improved combined container for better styling */}
+                  <div className="flex overflow-hidden rounded-xl border-2 border-gray-200 focus-within:border-[#15a2a6] transition-colors">
+                    <div className="flex items-center px-3 bg-gray-100 flex-shrink-0">
                       <span className="text-lg">{selectedCountry.flag}</span>
                       <span className="ml-2 font-medium text-gray-700">+{selectedCountry.dialCode}</span>
                     </div>
@@ -577,12 +579,11 @@ export function AuthPage() {
                       pattern="[0-9]*"
                       value={phoneNumber}
                       onChange={(e) => {
-                        // Only allow numbers
                         const value = e.target.value.replace(/\D/g, '')
                         setPhoneNumber(value)
                       }}
                       placeholder={selectedCountry.dialCode === '1' ? "555 123 4567" : "21 234 5678"}
-                      className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-r-xl focus:border-[#15a2a6] focus:outline-none transition-colors text-base"
+                      className="flex-1 px-4 py-3 focus:outline-none transition-colors text-base"
                       autoFocus
                       autoComplete="tel-national"
                     />
@@ -623,6 +624,7 @@ export function AuthPage() {
             </p>
 
             {/* Country Picker Modal */}
+
             {showCountryPicker && (
               <div className="fixed inset-0 z-50 flex items-end justify-center">
                 <div 
@@ -632,7 +634,11 @@ export function AuthPage() {
                     setCountrySearch('')
                   }}
                 />
-                <div className="relative w-full max-h-[80vh] bg-white rounded-t-3xl shadow-2xl animate-slide-up safe-area-bottom">
+                {/* Improved handling for mobile keyboard */}
+                <div 
+                  className="relative w-full bg-white rounded-t-3xl shadow-2xl animate-slide-up safe-area-bottom" 
+                  style={{ maxHeight: '100dvh' }}
+                >
                   {/* Modal Header */}
                   <div className="sticky top-0 bg-white border-b border-gray-200 p-4">
                     <h3 className="text-lg font-semibold text-gray-900 mb-3">Select Country</h3>
@@ -646,12 +652,19 @@ export function AuthPage() {
                         placeholder="Search country or code..."
                         className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:border-blue-400 focus:outline-none"
                         autoFocus
+                        ref={(el) => {
+                          if (el) {
+                            setTimeout(() => {
+                              el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+                            }, 300)
+                          }
+                        }}
                       />
                     </div>
                   </div>
                   
                   {/* Country List */}
-                  <div className="overflow-y-auto max-h-[50vh]">
+                  <div className="overflow-y-auto" style={{ maxHeight: '50vh' }}>
                     {filteredCountries.map((country) => (
                       <button
                         key={country.code}
