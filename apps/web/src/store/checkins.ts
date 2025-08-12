@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import { subscribeWithSelector } from 'zustand/middleware'
+import { supabase } from '../lib/supabase'
 import type { CheckInWithUser } from '../lib/api/checkins'
 import {
   getCheckIns,
@@ -202,7 +203,7 @@ export const useCheckInStore = create<CheckInState>()(
         // Acknowledge check-in
         acknowledge: async (id: string, notes?: string) => {
           try {
-            const { data: { user } } = await import('../lib/supabase').then(m => m.supabase.auth.getUser())
+            const { data: { user } } = await supabase.auth.getUser()
             if (!user) throw new Error('Not authenticated')
 
             const updated = await acknowledgeCheckIn(id, user.id, notes)

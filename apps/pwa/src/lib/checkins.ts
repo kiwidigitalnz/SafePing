@@ -60,24 +60,3 @@ export async function getCheckInHistory(userId: string, limit: number = 20): Pro
   return data
 }
 
-export async function syncPendingCheckIns(): Promise<void> {
-  const pendingCheckIns = await offlineStore.getPendingCheckIns()
-  
-  for (const checkIn of pendingCheckIns) {
-    try {
-      const { error } = await supabase
-        .from('check_ins')
-        .insert({
-          ...checkIn,
-          synced_at: new Date().toISOString()
-        })
-
-      if (!error) {
-        // Remove from offline storage after successful sync
-        await offlineStore.removePendingCheckIn(checkIn.id)
-      }
-    } catch (error) {
-      console.warn('Failed to sync check-in:', checkIn.id, error)
-    }
-  }
-}

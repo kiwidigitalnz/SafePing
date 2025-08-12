@@ -15,7 +15,7 @@
     "typecheck": "turbo typecheck",
     "test": "turbo test",
     "clean": "turbo clean",
-    "prepare": "husky install",
+    "prepare": "husky",
     "pre-push": "turbo typecheck && turbo lint && turbo build",
     "lint-staged": "lint-staged"
   },
@@ -33,7 +33,7 @@
       "prettier --write"
     ]
   },
-  "packageManager": "pnpm@8.15.0",
+  "packageManager": "pnpm@10.14.0",
   "engines": {
     "node": ">=18.0.0"
   },

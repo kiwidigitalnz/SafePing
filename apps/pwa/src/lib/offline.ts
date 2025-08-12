@@ -115,7 +115,7 @@ export async function handleBackgroundSync(): Promise<void> {
   }
 
   try {
-    const { syncPendingCheckIns } = await import('./checkins')
+    const { syncPendingCheckIns } = await import('./sync')
     await syncPendingCheckIns()
     console.log('Background sync completed successfully')
   } catch (error) {
