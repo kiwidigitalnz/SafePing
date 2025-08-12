@@ -58,7 +58,7 @@ export class SMSService {
       messages.map(message => this.sendSMS(message))
     );
 
-    const processedResults = results.map((result, index) => {
+    const processedResults = results.map((result) => {
       if (result.status === 'fulfilled') {
         return result.value;
       } else {

@@ -2,6 +2,7 @@
   "name": "safeping",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "description": "SafePing - Lone Worker Safety Monitoring Application",
   "workspaces": [
     "apps/*",
@@ -25,17 +26,8 @@
     "turbo": "^2.0.0"
   },
   "lint-staged": {
-    "apps/web/src/**/*.{js,jsx,ts,tsx}": [
-      "eslint --fix --max-warnings 0"
-    ],
-    "apps/pwa/src/**/*.{js,jsx,ts,tsx}": [
-      "eslint --fix --max-warnings 0"
-    ],
-    "apps/landing/src/**/*.{js,jsx,ts,tsx}": [
-      "eslint --fix --max-warnings 0"
-    ],
-    "packages/*/src/**/*.{js,jsx,ts,tsx}": [
-      "eslint --fix --max-warnings 0"
+    "**/*.{js,jsx,ts,tsx}": [
+      "eslint --fix"
     ],
     "*.{json,md,yml,yaml}": [
       "prettier --write"
