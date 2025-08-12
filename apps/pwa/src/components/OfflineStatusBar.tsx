@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { Wifi, WifiOff, Clock, CheckCircle } from 'lucide-react'
 import { offlineAuth } from '../lib/offlineAuth'
 
