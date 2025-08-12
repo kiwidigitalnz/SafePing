@@ -273,20 +273,20 @@ export function Staff() {
       const verificationCode = invitationData[0].verification_code
 
       // Send SMS via edge function with the verification code
-      console.log('Invoking send-worker-invitation function with:', {
+      console.log('Invoking send-staff-invitation function with:', {
         phoneNumber: staff.phone,
         invitationToken: invitationData[0].invitation_token,
         verificationCode,
-        workerName: `${staff.first_name} ${staff.last_name}`,
+        staffName: `${staff.first_name} ${staff.last_name}`,
         organizationName: 'SafePing'
       })
 
-      const { data, error } = await supabase.functions.invoke('send-worker-invitation', {
+      const { data, error } = await supabase.functions.invoke('send-staff-invitation', {
         body: {
           phoneNumber: staff.phone,
           invitationToken: invitationData[0].invitation_token,
           verificationCode,
-          workerName: `${staff.first_name} ${staff.last_name}`,
+          staffName: `${staff.first_name} ${staff.last_name}`,
           organizationName: 'SafePing'
         }
       })
