@@ -1,0 +1,311 @@
+{
+  "typescript": {
+    "current": "5.8.3",
+    "latest": "5.9.2",
+    "wanted": "5.8.3",
+    "isDeprecated": false,
+    "dependencyType": "devDependencies",
+    "dependentPackages": [
+      {
+        "name": "@safeping/pwa",
+        "location": "/Users/richardbarley/Github/SafePing/apps/pwa"
+      },
+      {
+        "name": "@safeping/web",
+        "location": "/Users/richardbarley/Github/SafePing/apps/web"
+      }
+    ]
+  },
+  "@eslint/js": {
+    "current": "8.57.1",
+    "latest": "9.33.0",
+    "wanted": "8.57.1",
+    "isDeprecated": false,
+    "dependencyType": "devDependencies",
+    "dependentPackages": [
+      {
+        "name": "@safeping/phone-utils",
+        "location": "/Users/richardbarley/Github/SafePing/packages/phone-utils"
+      },
+      {
+        "name": "@safeping/sms-service",
+        "location": "/Users/richardbarley/Github/SafePing/packages/sms-service"
+      },
+      {
+        "name": "@safeping/ui",
+        "location": "/Users/richardbarley/Github/SafePing/packages/ui"
+      }
+    ]
+  },
+  "@hookform/resolvers": {
+    "current": "3.10.0",
+    "latest": "5.2.1",
+    "wanted": "3.10.0",
+    "isDeprecated": false,
+    "dependencyType": "dependencies",
+    "dependentPackages": [
+      {
+        "name": "@safeping/landing",
+        "location": "/Users/richardbarley/Github/SafePing/apps/landing"
+      }
+    ]
+  },
+  "@types/node": {
+    "current": "20.19.10",
+    "latest": "24.2.1",
+    "wanted": "20.19.10",
+    "isDeprecated": false,
+    "dependencyType": "devDependencies",
+    "dependentPackages": [
+      {
+        "name": "@safeping/phone-utils",
+        "location": "/Users/richardbarley/Github/SafePing/packages/phone-utils"
+      },
+      {
+        "name": "@safeping/sms-service",
+        "location": "/Users/richardbarley/Github/SafePing/packages/sms-service"
+      }
+    ]
+  },
+  "@typescript-eslint/eslint-plugin": {
+    "current": "7.18.0",
+    "latest": "8.39.1",
+    "wanted": "7.18.0",
+    "isDeprecated": false,
+    "dependencyType": "devDependencies",
+    "dependentPackages": [
+      {
+        "name": "@safeping/phone-utils",
+        "location": "/Users/richardbarley/Github/SafePing/packages/phone-utils"
+      },
+      {
+        "name": "@safeping/sms-service",
+        "location": "/Users/richardbarley/Github/SafePing/packages/sms-service"
+      },
+      {
+        "name": "@safeping/ui",
+        "location": "/Users/richardbarley/Github/SafePing/packages/ui"
+      }
+    ]
+  },
+  "@typescript-eslint/parser": {
+    "current": "7.18.0",
+    "latest": "8.39.1",
+    "wanted": "7.18.0",
+    "isDeprecated": false,
+    "dependencyType": "devDependencies",
+    "dependentPackages": [
+      {
+        "name": "@safeping/phone-utils",
+        "location": "/Users/richardbarley/Github/SafePing/packages/phone-utils"
+      },
+      {
+        "name": "@safeping/sms-service",
+        "location": "/Users/richardbarley/Github/SafePing/packages/sms-service"
+      },
+      {
+        "name": "@safeping/ui",
+        "location": "/Users/richardbarley/Github/SafePing/packages/ui"
+      }
+    ]
+  },
+  "@vitejs/plugin-react": {
+    "current": "4.7.0",
+    "latest": "5.0.0",
+    "wanted": "4.7.0",
+    "isDeprecated": false,
+    "dependencyType": "devDependencies",
+    "dependentPackages": [
+      {
+        "name": "@safeping/landing",
+        "location": "/Users/richardbarley/Github/SafePing/apps/landing"
+      },
+      {
+        "name": "@safeping/pwa",
+        "location": "/Users/richardbarley/Github/SafePing/apps/pwa"
+      },
+      {
+        "name": "@safeping/web",
+        "location": "/Users/richardbarley/Github/SafePing/apps/web"
+      }
+    ]
+  },
+  "eslint": {
+    "current": "8.57.1",
+    "latest": "9.33.0",
+    "wanted": "8.57.1",
+    "isDeprecated": false,
+    "dependencyType": "devDependencies",
+    "dependentPackages": [
+      {
+        "name": "@safeping/config",
+        "location": "/Users/richardbarley/Github/SafePing/packages/config"
+      },
+      {
+        "name": "@safeping/phone-utils",
+        "location": "/Users/richardbarley/Github/SafePing/packages/phone-utils"
+      },
+      {
+        "name": "@safeping/sms-service",
+        "location": "/Users/richardbarley/Github/SafePing/packages/sms-service"
+      },
+      {
+        "name": "@safeping/ui",
+        "location": "/Users/richardbarley/Github/SafePing/packages/ui"
+      }
+    ]
+  },
+  "eslint-config-prettier": {
+    "current": "9.1.2",
+    "latest": "10.1.8",
+    "wanted": "9.1.2",
+    "isDeprecated": false,
+    "dependencyType": "devDependencies",
+    "dependentPackages": [
+      {
+        "name": "@safeping/config",
+        "location": "/Users/richardbarley/Github/SafePing/packages/config"
+      }
+    ]
+  },
+  "eslint-plugin-react-hooks": {
+    "current": "4.6.2",
+    "latest": "5.2.0",
+    "wanted": "4.6.2",
+    "isDeprecated": false,
+    "dependencyType": "devDependencies",
+    "dependentPackages": [
+      {
+        "name": "@safeping/config",
+        "location": "/Users/richardbarley/Github/SafePing/packages/config"
+      }
+    ]
+  },
+  "globals": {
+    "current": "15.15.0",
+    "latest": "16.3.0",
+    "wanted": "15.15.0",
+    "isDeprecated": false,
+    "dependencyType": "devDependencies",
+    "dependentPackages": [
+      {
+        "name": "@safeping/landing",
+        "location": "/Users/richardbarley/Github/SafePing/apps/landing"
+      }
+    ]
+  },
+  "react": {
+    "current": "18.3.1",
+    "latest": "19.1.1",
+    "wanted": "18.3.1",
+    "isDeprecated": false,
+    "dependencyType": "dependencies",
+    "dependentPackages": [
+      {
+        "name": "@safeping/landing",
+        "location": "/Users/richardbarley/Github/SafePing/apps/landing"
+      },
+      {
+        "name": "@safeping/web",
+        "location": "/Users/richardbarley/Github/SafePing/apps/web"
+      }
+    ]
+  },
+  "react-dom": {
+    "current": "18.3.1",
+    "latest": "19.1.1",
+    "wanted": "18.3.1",
+    "isDeprecated": false,
+    "dependencyType": "dependencies",
+    "dependentPackages": [
+      {
+        "name": "@safeping/landing",
+        "location": "/Users/richardbarley/Github/SafePing/apps/landing"
+      },
+      {
+        "name": "@safeping/web",
+        "location": "/Users/richardbarley/Github/SafePing/apps/web"
+      }
+    ]
+  },
+  "tailwind-merge": {
+    "current": "2.6.0",
+    "latest": "3.3.1",
+    "wanted": "2.6.0",
+    "isDeprecated": false,
+    "dependencyType": "dependencies",
+    "dependentPackages": [
+      {
+        "name": "@safeping/landing",
+        "location": "/Users/richardbarley/Github/SafePing/apps/landing"
+      },
+      {
+        "name": "@safeping/ui",
+        "location": "/Users/richardbarley/Github/SafePing/packages/ui"
+      }
+    ]
+  },
+  "tailwindcss": {
+    "current": "3.4.17",
+    "latest": "4.1.11",
+    "wanted": "3.4.17",
+    "isDeprecated": false,
+    "dependencyType": "devDependencies",
+    "dependentPackages": [
+      {
+        "name": "@safeping/landing",
+        "location": "/Users/richardbarley/Github/SafePing/apps/landing"
+      },
+      {
+        "name": "@safeping/pwa",
+        "location": "/Users/richardbarley/Github/SafePing/apps/pwa"
+      },
+      {
+        "name": "@safeping/web",
+        "location": "/Users/richardbarley/Github/SafePing/apps/web"
+      },
+      {
+        "name": "@safeping/config",
+        "location": "/Users/richardbarley/Github/SafePing/packages/config"
+      }
+    ]
+  },
+  "vite": {
+    "current": "6.3.5",
+    "latest": "7.1.2",
+    "wanted": "6.3.5",
+    "isDeprecated": false,
+    "dependencyType": "devDependencies",
+    "dependentPackages": [
+      {
+        "name": "@safeping/landing",
+        "location": "/Users/richardbarley/Github/SafePing/apps/landing"
+      }
+    ]
+  },
+  "lucide-react": {
+    "current": "0.525.0",
+    "latest": "0.539.0",
+    "wanted": "0.525.0",
+    "isDeprecated": false,
+    "dependencyType": "dependencies",
+    "dependentPackages": [
+      {
+        "name": "@safeping/landing",
+        "location": "/Users/richardbarley/Github/SafePing/apps/landing"
+      },
+      {
+        "name": "@safeping/pwa",
+        "location": "/Users/richardbarley/Github/SafePing/apps/pwa"
+      },
+      {
+        "name": "@safeping/web",
+        "location": "/Users/richardbarley/Github/SafePing/apps/web"
+      },
+      {
+        "name": "@safeping/ui",
+        "location": "/Users/richardbarley/Github/SafePing/packages/ui"
+      }
+    ]
+  }
+}

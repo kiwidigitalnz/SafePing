@@ -22,14 +22,14 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
+    "@eslint/js": "^9.33.0",
     "@safeping/config": "workspace:*",
-    "@types/node": "^20.11.19",
-    "@eslint/js": "^8.57.1",
-    "@typescript-eslint/eslint-plugin": "^7.0.0",
-    "@typescript-eslint/parser": "^7.0.0",
-    "eslint": "^8.57.1",
-    "tsup": "^8.0.2",
-    "typescript": "^5.3.3"
+    "@types/node": "^24.2.1",
+    "@typescript-eslint/eslint-plugin": "^8.39.1",
+    "@typescript-eslint/parser": "^8.39.1",
+    "eslint": "^9.33.0",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.2"
   },
   "dependencies": {
     "@safeping/phone-utils": "workspace:*"

@@ -82,7 +82,7 @@ export function useBiometric() {
       
       // Create credential options
       const createCredentialOptions: PublicKeyCredentialCreationOptions = {
-        challenge: authChallenge,
+        challenge: authChallenge.buffer as ArrayBuffer,
         rp: {
           name: 'SafePing',
           id: window.location.hostname,
@@ -155,7 +155,7 @@ export function useBiometric() {
       
       // Create assertion options
       const getCredentialOptions: PublicKeyCredentialRequestOptions = {
-        challenge: authChallenge,
+        challenge: authChallenge.buffer as ArrayBuffer,
         allowCredentials: [{
           id: Uint8Array.from(atob(credentialInfo.publicKey), c => c.charCodeAt(0)),
           type: 'public-key',

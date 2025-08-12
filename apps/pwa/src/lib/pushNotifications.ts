@@ -91,7 +91,7 @@ class PushNotificationService {
         // Subscribe to push notifications
         subscription = await registration.pushManager.subscribe({
           userVisibleOnly: true,
-          applicationServerKey: this.urlBase64ToUint8Array(this.vapidPublicKey)
+          applicationServerKey: this.urlBase64ToUint8Array(this.vapidPublicKey).buffer as ArrayBuffer
         })
         
         console.log('New push subscription created:', subscription)

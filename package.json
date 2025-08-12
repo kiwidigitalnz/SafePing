@@ -20,10 +20,10 @@
     "lint-staged": "lint-staged"
   },
   "devDependencies": {
-    "husky": "^9.0.11",
+    "husky": "^9.1.7",
     "lint-staged": "^16.1.5",
-    "supabase": "^2.33.9",
-    "turbo": "^2.0.0"
+    "supabase": "^2.34.3",
+    "turbo": "^2.5.5"
   },
   "lint-staged": {
     "**/*.{js,jsx,ts,tsx}": [
@@ -38,6 +38,6 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.54.0"
+    "@supabase/supabase-js": "^2.55.0"
   }
 }
