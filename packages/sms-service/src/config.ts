@@ -17,8 +17,8 @@ export function getSMSConfig(env?: Record<string, string | undefined>): SMSConfi
     if (typeof process !== 'undefined' && process.env) {
       return process.env[key];
     }
-    if (typeof Deno !== 'undefined' && Deno.env) {
-      return Deno.env.get(key);
+    if (typeof (globalThis as any).Deno !== 'undefined' && (globalThis as any).Deno.env) {
+      return (globalThis as any).Deno.env.get(key);
     }
     return undefined;
   };
