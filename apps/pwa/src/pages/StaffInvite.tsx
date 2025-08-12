@@ -62,7 +62,7 @@ export function StaffInvite() {
         appVersion: '1.0.0'
       }
 
-      const { data, error: verifyError } = await supabase.functions.invoke('verify-staff-invitation', {
+      const { data, error: verifyError } = await supabase.functions.invoke('verify-staff', {
         body: {
           invitationToken: token,
           deviceInfo
@@ -109,10 +109,10 @@ export function StaffInvite() {
         appVersion: '1.0.0'
       }
 
-      const { data, error: verifyError } = await supabase.functions.invoke('verify-staff-invitation', {
+      const { data, error: verifyError } = await supabase.functions.invoke('verify-staff', {
         body: {
           phoneNumber: fullPhoneNumber,
-          verificationCode: verificationCode.toUpperCase(),
+          verificationCode: verificationCode,
           deviceInfo
         }
       })
@@ -291,18 +291,18 @@ export function StaffInvite() {
             {/* Verification Code */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Invitation Code
+                Verification Code
               </label>
               <input
                 type="text"
                 value={verificationCode}
-                onChange={(e) => setVerificationCode(e.target.value.toUpperCase())}
-                placeholder="ABC12345"
-                maxLength={8}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[#15a2a6] focus:outline-none transition-colors text-center text-lg font-mono tracking-wider"
+                onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
+                placeholder="123456"
+                maxLength={6}
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[#15a2a6] focus:outline-none transition-colors text-center text-2xl font-mono tracking-widest"
               />
               <p className="text-xs text-gray-500 mt-2">
-                Enter the 8-character code from your SMS invitation
+                Enter the 6-digit code from your SMS invitation
               </p>
             </div>
 
