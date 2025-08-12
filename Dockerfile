@@ -14,6 +14,8 @@ COPY apps/web/package.json ./apps/web/
 COPY apps/pwa/package.json ./apps/pwa/
 COPY packages/config/package.json ./packages/config/
 COPY packages/ui/package.json ./packages/ui/
+COPY packages/phone-utils/package.json ./packages/phone-utils/
+COPY packages/sms-service/package.json ./packages/sms-service/
 
 # Install dependencies
 RUN pnpm install --frozen-lockfile
