@@ -1,530 +1,506 @@
 import { useState, useEffect } from 'react'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { signInWithPhone, signInWithEmail, signInWithOTP, sendOTP } from '../lib/auth'
-import { useAuthStore } from '../store/auth'
-import { 
-  Smartphone, 
-  Mail, 
-  MessageSquare,
-  Shield, 
-  Lock,
-  Eye,
-  EyeOff,
-  ChevronLeft,
-  AlertCircle,
-  CheckCircle,
-  Fingerprint,
-  Download
-} from 'lucide-react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Shield, Smartphone, MessageSquare, Fingerprint, Search, ChevronDown, Check } from 'lucide-react'
+import { PinEntry } from '../components/PinEntry'
+import { BiometricAuth } from '../components/BiometricAuth'
+import { OtpVerification } from '../components/OtpVerification'
 import InstallPrompt from '../components/InstallPrompt'
 import PermissionsOnboarding from '../components/PermissionsOnboarding'
-import { formatPhoneNumber, unformatPhoneNumber, countryCodesData } from '../utils/phoneFormatter'
+import { staffAuth } from '../lib/staffAuth'
+import { useBiometric } from '../hooks/useBiometric'
 import { usePWAInstall } from '../hooks/usePWAInstall'
+import { formatPhoneNumber, unformatPhoneNumber, countryCodesData } from '../utils/phoneFormatter'
 
-const phoneSchema = z.object({
-  countryCode: z.string(),
-  phone: z.string().min(10, 'Please enter a valid phone number'),
-  password: z.string().min(6, 'Password must be at least 6 characters')
-})
+type AuthMethod = 'biometric' | 'pin' | 'otp'
+type AuthFlow = 'invitation' | 'signin' | 'setup'
+type SetupStep = 'install' | 'permissions' | 'pin' | 'biometric' | 'complete'
 
-const emailSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters')
-})
+export function AuthPage() {
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const { isInstalled } = usePWAInstall()
+  const { isAvailable: biometricAvailable } = useBiometric()
 
-const otpSchema = z.object({
-  phone: z.string().min(10, 'Please enter a valid phone number'),
-  otp: z.string().length(6, 'Please enter the 6-digit code')
-})
-
-type AuthMode = 'phone' | 'email' | 'otp'
-
-export default function AuthPage() {
-  const [mode, setMode] = useState<AuthMode>('phone')
+  // Auth state
+  const [authFlow, setAuthFlow] = useState<AuthFlow>('signin')
+  const [authMethod, setAuthMethod] = useState<AuthMethod | null>(null)
+  const [setupStep, setSetupStep] = useState<SetupStep>('install')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [otpSent, setOtpSent] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
-  const [showCountryPicker, setShowCountryPicker] = useState(false)
+
+  // Invitation data
+  const [invitationToken, setInvitationToken] = useState<string | null>(null)
+  const [phoneNumber, setPhoneNumber] = useState('')
+  // const [verificationCode, setVerificationCode] = useState('')
+  
+  // Country selection
   const [selectedCountry, setSelectedCountry] = useState(countryCodesData[0])
-  const [showPermissions, setShowPermissions] = useState(false)
-  const [rememberMe, setRememberMe] = useState(false)
-  const { setUser } = useAuthStore()
-  const { isInstallable, isInstalled } = usePWAInstall()
+  const [showCountryPicker, setShowCountryPicker] = useState(false)
+  const [countrySearch, setCountrySearch] = useState('')
 
-  const phoneForm = useForm<z.infer<typeof phoneSchema>>({
-    resolver: zodResolver(phoneSchema),
-    defaultValues: { 
-      countryCode: '+1',
-      phone: '', 
-      password: '' 
-    }
-  })
-
-  const emailForm = useForm<z.infer<typeof emailSchema>>({
-    resolver: zodResolver(emailSchema),
-    defaultValues: { email: '', password: '' }
-  })
-
-  const otpForm = useForm<z.infer<typeof otpSchema>>({
-    resolver: zodResolver(otpSchema),
-    defaultValues: { phone: '', otp: '' }
-  })
-
-  // Auto-format phone number as user types
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>, form: any) => {
-    const formatted = formatPhoneNumber(e.target.value)
-    form.setValue('phone', formatted)
-  }
-
-  // Check for biometric availability
+  // Check for invitation token in URL
   useEffect(() => {
-    if ('credentials' in navigator) {
-      // Check for WebAuthn support
-      console.log('WebAuthn supported')
+    const token = searchParams.get('token')
+    if (token) {
+      setInvitationToken(token)
+      setAuthFlow('invitation')
+      // Extract phone number from token if needed
+      // This would typically be fetched from the backend
     }
+  }, [searchParams])
+
+  // Auto-detect user's country based on browser locale or timezone
+  useEffect(() => {
+    const detectCountry = () => {
+      // Try to get country from browser's language
+      const browserLang = navigator.language || 'en-NZ'
+      const countryCode = browserLang.split('-')[1]?.toUpperCase()
+      
+      // Map common country codes to phone country codes
+      const countryMap: { [key: string]: string } = {
+        'NZ': '+64',  // New Zealand first
+        'AU': '+61',  // Australia second
+        'US': '+1',
+        'GB': '+44',
+        'CA': '+1',
+        'IN': '+91',
+        'CN': '+86',
+        'JP': '+81',
+        'KR': '+82',
+        'DE': '+49',
+        'FR': '+33',
+        'IT': '+39',
+        'ES': '+34',
+        'MX': '+52',
+        'BR': '+55',
+        'AR': '+54',
+        'ZA': '+27',
+        'NG': '+234',
+        'EG': '+20',
+        'VN': '+84',
+        'TH': '+66',
+        'PH': '+63',
+        'ID': '+62',
+        'MY': '+60',
+        'SG': '+65'
+      }
+      
+      // Default to New Zealand if no country detected
+      let defaultCountryCode = '+64'
+      
+      if (countryCode && countryMap[countryCode]) {
+        defaultCountryCode = countryMap[countryCode]
+      }
+      
+      const detectedCountry = countryCodesData.find(c => c.code === defaultCountryCode)
+      if (detectedCountry) {
+        setSelectedCountry(detectedCountry)
+      }
+    }
+    
+    detectCountry()
   }, [])
 
-  const handlePhoneSignIn = async (data: z.infer<typeof phoneSchema>) => {
+  // Check if user is already authenticated
+  useEffect(() => {
+    const checkAuth = async () => {
+      const isAuthenticated = await staffAuth.validateSession()
+      if (isAuthenticated) {
+        navigate('/dashboard')
+      }
+    }
+    checkAuth()
+  }, [navigate])
+
+  // Handle invitation verification
+  const handleInvitationVerification = async (code: string) => {
+    if (!invitationToken) return
+
     setLoading(true)
     setError(null)
-    
+
     try {
-      const fullPhone = data.countryCode + unformatPhoneNumber(data.phone)
-      const result = await signInWithPhone(fullPhone, data.password)
+      const result = await staffAuth.verifyInvitation(invitationToken, code)
       
-      if (rememberMe) {
-        localStorage.setItem('rememberMe', 'true')
+      if (result.success) {
+        // Move to setup flow
+        setAuthFlow('setup')
+        setSetupStep('install')
+      } else {
+        setError(result.error || 'Verification failed')
       }
-      
-      setUser(result.user)
-      
-      // Show permissions onboarding for first-time users
-      const hasCompletedOnboarding = localStorage.getItem('permissions-onboarding-complete')
-      if (!hasCompletedOnboarding) {
-        setShowPermissions(true)
-      }
-    } catch (err: unknown) {
-      setError((err as Error).message || 'Sign in failed')
-      // Add haptic feedback for error
-      if ('vibrate' in navigator) {
-        navigator.vibrate([100, 50, 100])
-      }
+    } catch (err: any) {
+      setError(err.message)
     } finally {
       setLoading(false)
     }
   }
 
-  const handleEmailSignIn = async (data: z.infer<typeof emailSchema>) => {
+  // Handle PIN setup
+  const handlePinSetup = async (pin: string) => {
     setLoading(true)
     setError(null)
-    
+
     try {
-      const result = await signInWithEmail(data.email, data.password)
+      const result = await staffAuth.setupPin(pin)
       
-      if (rememberMe) {
-        localStorage.setItem('rememberMe', 'true')
+      if (result.success) {
+        // Move to biometric setup if available
+        if (biometricAvailable) {
+          setSetupStep('biometric')
+        } else {
+          setSetupStep('complete')
+          setTimeout(() => {
+            navigate('/dashboard')
+          }, 2000)
+        }
+      } else {
+        setError(result.error || 'Failed to set PIN')
       }
-      
-      setUser(result.user)
-      
-      // Show permissions onboarding for first-time users
-      const hasCompletedOnboarding = localStorage.getItem('permissions-onboarding-complete')
-      if (!hasCompletedOnboarding) {
-        setShowPermissions(true)
-      }
-    } catch (err: unknown) {
-      setError((err as Error).message || 'Sign in failed')
-      // Add haptic feedback for error
-      if ('vibrate' in navigator) {
-        navigator.vibrate([100, 50, 100])
-      }
+    } catch (err: any) {
+      setError(err.message)
     } finally {
       setLoading(false)
     }
   }
 
-  const handleSendOTP = async (data: { phone: string }) => {
+  // Handle PIN authentication
+  const handlePinAuth = async (pin: string) => {
     setLoading(true)
     setError(null)
-    
+
     try {
-      const fullPhone = selectedCountry.code + unformatPhoneNumber(data.phone)
-      await sendOTP(fullPhone)
-      setOtpSent(true)
-      otpForm.setValue('phone', fullPhone)
+      const result = await staffAuth.validatePin(pin)
       
-      // Success haptic feedback
-      if ('vibrate' in navigator) {
-        navigator.vibrate(50)
+      if (result.success) {
+        navigate('/dashboard')
+      } else {
+        setError(result.error || 'Invalid PIN')
       }
-    } catch (err: unknown) {
-      setError((err as Error).message || 'Failed to send code')
-      if ('vibrate' in navigator) {
-        navigator.vibrate([100, 50, 100])
-      }
+    } catch (err: any) {
+      setError(err.message)
     } finally {
       setLoading(false)
     }
   }
 
-  const handleOTPSignIn = async (data: z.infer<typeof otpSchema>) => {
+  // Handle OTP request
+  const handleOtpRequest = async () => {
+    if (!phoneNumber) {
+      setError('Please enter your phone number')
+      return
+    }
+
     setLoading(true)
     setError(null)
-    
+
     try {
-      const result = await signInWithOTP(data.phone, data.otp)
-      setUser(result.user)
+      const fullPhoneNumber = selectedCountry.code + unformatPhoneNumber(phoneNumber)
+      const result = await staffAuth.sendOTP(fullPhoneNumber)
       
-      // Show permissions onboarding for first-time users
-      const hasCompletedOnboarding = localStorage.getItem('permissions-onboarding-complete')
-      if (!hasCompletedOnboarding) {
-        setShowPermissions(true)
+      if (result.success) {
+        setAuthMethod('otp')
+      } else {
+        setError(result.error || 'Failed to send OTP')
       }
-    } catch (err: unknown) {
-      setError((err as Error).message || 'Invalid code')
-      if ('vibrate' in navigator) {
-        navigator.vibrate([100, 50, 100])
-      }
+    } catch (err: any) {
+      setError(err.message)
     } finally {
       setLoading(false)
     }
   }
 
-  const handlePermissionsComplete = () => {
-    localStorage.setItem('permissions-onboarding-complete', 'true')
-    setShowPermissions(false)
+  // Handle OTP verification
+  const handleOtpVerification = async (code: string) => {
+    setLoading(true)
+    setError(null)
+
+    try {
+      const fullPhoneNumber = selectedCountry.code + unformatPhoneNumber(phoneNumber)
+      const result = await staffAuth.verifyOTP(fullPhoneNumber, code)
+      
+      if (result.success) {
+        navigate('/dashboard')
+      } else {
+        setError(result.error || 'Invalid code')
+      }
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  if (showPermissions) {
-    return <PermissionsOnboarding onComplete={handlePermissionsComplete} />
+  // Filter countries based on search
+  const filteredCountries = countryCodesData.filter(country => 
+    country.country.toLowerCase().includes(countrySearch.toLowerCase()) ||
+    country.code.includes(countrySearch)
+  )
+
+  // Render invitation flow
+  if (authFlow === 'invitation' && invitationToken) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <OtpVerification
+          phoneNumber={phoneNumber}
+          onVerify={handleInvitationVerification}
+          onResend={() => {
+            // Handle resend for invitation
+          }}
+          error={error || undefined}
+          loading={loading}
+          isInvitation={true}
+        />
+      </div>
+    )
   }
 
-  return (
-    <>
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50 flex flex-col safe-area">
-        {/* PWA Install Banner */}
-        {!isInstalled && isInstallable && (
-          <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-4 py-3 flex items-center justify-between animate-slide-down">
-            <div className="flex items-center space-x-3">
-              <Download size={20} />
-              <span className="text-sm font-medium">Install for better experience</span>
+  // Render setup flow
+  if (authFlow === 'setup') {
+    switch (setupStep) {
+      case 'install':
+        if (!isInstalled) {
+          return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+              <InstallPrompt
+                onInstalled={() => setSetupStep('permissions')}
+                onClose={() => setSetupStep('permissions')}
+              />
             </div>
-            <button 
-              onClick={() => {}}
-              className="text-white/80 hover:text-white text-sm underline"
-            >
-              Install
-            </button>
+          )
+        }
+        setSetupStep('permissions')
+        break
+
+      case 'permissions':
+        return (
+          <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <PermissionsOnboarding
+              onComplete={() => setSetupStep('pin')}
+              onSkip={() => setSetupStep('pin')}
+            />
           </div>
-        )}
+        )
 
-        {/* Main Content */}
-        <div className="flex-1 flex items-center justify-center p-4">
-          <div className="w-full max-w-md">
-            {/* Logo and Header */}
-            <div className="text-center mb-8 animate-fade-in">
-              <div className="w-24 h-24 gradient-orange rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg animate-pulse-scale">
-                <Shield className="text-white" size={48} />
+      case 'pin':
+        return (
+          <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <PinEntry
+              onSubmit={handlePinSetup}
+              title="Create Your PIN"
+              isSetup={true}
+              error={error || undefined}
+              loading={loading}
+            />
+          </div>
+        )
+
+      case 'biometric':
+        return (
+          <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <BiometricAuth
+              onSuccess={() => {
+                setSetupStep('complete')
+                setTimeout(() => navigate('/dashboard'), 2000)
+              }}
+              onCancel={() => {
+                setSetupStep('complete')
+                setTimeout(() => navigate('/dashboard'), 2000)
+              }}
+              isSetup={true}
+            />
+          </div>
+        )
+
+      case 'complete':
+        return (
+          <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Shield className="w-8 h-8 text-green-600" />
               </div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h1>
-              <p className="text-gray-600">Sign in to access your safety dashboard</p>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Setup Complete!</h2>
+              <p className="text-gray-600">Redirecting to dashboard...</p>
             </div>
+          </div>
+        )
+    }
+  }
 
-            {/* Auth Mode Tabs */}
-            <div className="bg-white rounded-2xl shadow-sm p-1 mb-6">
-              <div className="flex space-x-1">
-                <button
-                  onClick={() => setMode('phone')}
-                  className={`flex-1 flex items-center justify-center py-3 px-4 rounded-xl text-sm font-semibold transition-all haptic-light ${
-                    mode === 'phone' 
-                      ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-sm' 
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  <Smartphone size={18} className="mr-2" />
-                  Phone
-                </button>
-                <button
-                  onClick={() => setMode('email')}
-                  className={`flex-1 flex items-center justify-center py-3 px-4 rounded-xl text-sm font-semibold transition-all haptic-light ${
-                    mode === 'email' 
-                      ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-sm' 
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  <Mail size={18} className="mr-2" />
-                  Email
-                </button>
-                <button
-                  onClick={() => setMode('otp')}
-                  className={`flex-1 flex items-center justify-center py-3 px-4 rounded-xl text-sm font-semibold transition-all haptic-light ${
-                    mode === 'otp' 
-                      ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-sm' 
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  <MessageSquare size={18} className="mr-2" />
-                  Code
-                </button>
-              </div>
+  // Render sign-in flow
+  if (!authMethod) {
+    // Auth method selection
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-6">
+        <div className="w-full max-w-sm">
+          <div className="text-center mb-8">
+            <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Shield className="w-10 h-10 text-blue-600" />
             </div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">SafePing</h1>
+            <p className="text-gray-600">Choose your authentication method</p>
+          </div>
 
-            {/* Error Message */}
-            {error && (
-              <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 flex items-start space-x-3 animate-fade-in">
-                <AlertCircle className="text-red-600 flex-shrink-0 mt-0.5" size={20} />
-                <p className="text-red-800 text-sm flex-1">{error}</p>
-              </div>
+          <div className="space-y-3">
+            {/* Biometric option */}
+            {biometricAvailable && staffAuth.isBiometricEnabled() && (
+              <button
+                onClick={() => setAuthMethod('biometric')}
+                className="w-full flex items-center gap-4 p-4 bg-white rounded-lg border-2 border-gray-200 hover:border-blue-500 transition-colors"
+              >
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                  <Fingerprint className="w-6 h-6 text-blue-600" />
+                </div>
+                <div className="text-left">
+                  <p className="font-semibold text-gray-900">Biometric</p>
+                  <p className="text-sm text-gray-600">Use Face ID or Touch ID</p>
+                </div>
+              </button>
             )}
 
-            {/* Forms Container */}
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-              {/* Phone Sign In */}
-              {mode === 'phone' && (
-                <form onSubmit={phoneForm.handleSubmit(handlePhoneSignIn)} className="space-y-5">
+            {/* PIN option */}
+            {staffAuth.isPinSetup() && (
+              <button
+                onClick={() => setAuthMethod('pin')}
+                className="w-full flex items-center gap-4 p-4 bg-white rounded-lg border-2 border-gray-200 hover:border-blue-500 transition-colors"
+              >
+                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                  <Shield className="w-6 h-6 text-green-600" />
+                </div>
+                <div className="text-left">
+                  <p className="font-semibold text-gray-900">PIN Code</p>
+                  <p className="text-sm text-gray-600">Enter your 6-digit PIN</p>
+                </div>
+              </button>
+            )}
+
+            {/* OTP option */}
+            <button
+              onClick={() => {
+                // Show phone input screen
+                setAuthMethod('otp')
+              }}
+              className="w-full flex items-center gap-4 p-4 bg-white rounded-lg border-2 border-gray-200 hover:border-blue-500 transition-colors"
+            >
+              <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                <MessageSquare className="w-6 h-6 text-purple-600" />
+              </div>
+              <div className="text-left">
+                <p className="font-semibold text-gray-900">SMS Code</p>
+                <p className="text-sm text-gray-600">Receive a code via SMS</p>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Render selected auth method
+  switch (authMethod) {
+    case 'biometric':
+      return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <BiometricAuth
+            onSuccess={() => navigate('/dashboard')}
+            onCancel={() => setAuthMethod(null)}
+          />
+        </div>
+      )
+
+    case 'pin':
+      return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <PinEntry
+            onSubmit={handlePinAuth}
+            onCancel={() => setAuthMethod(null)}
+            error={error || undefined}
+            loading={loading}
+          />
+        </div>
+      )
+
+    case 'otp':
+      if (!phoneNumber) {
+        // Phone number input with country selector
+        return (
+          <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex items-center justify-center px-6">
+            <div className="w-full max-w-md">
+              {/* Header */}
+              <div className="text-center mb-8">
+                <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                  <Smartphone className="text-white" size={36} />
+                </div>
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                  Enter Your Phone Number
+                </h2>
+                <p className="text-gray-600">
+                  We'll send you a verification code via SMS
+                </p>
+              </div>
+
+              {/* Phone Input Card */}
+              <div className="bg-white rounded-2xl shadow-lg p-6">
+                <div className="space-y-4">
+                  {/* Country Selector */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Country
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setShowCountryPicker(true)}
+                      className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl hover:border-blue-400 transition-colors"
+                    >
+                      <div className="flex items-center space-x-3">
+                        <span className="text-2xl">{selectedCountry.flag}</span>
+                        <div className="text-left">
+                          <p className="font-medium text-gray-900">{selectedCountry.country}</p>
+                          <p className="text-sm text-gray-500">{selectedCountry.code}</p>
+                        </div>
+                      </div>
+                      <ChevronDown className="text-gray-400" size={20} />
+                    </button>
+                  </div>
+
+                  {/* Phone Number Input */}
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Phone Number
                     </label>
                     <div className="flex space-x-2">
-                      <button
-                        type="button"
-                        onClick={() => setShowCountryPicker(!showCountryPicker)}
-                        className="flex items-center space-x-2 px-3 py-4 bg-gray-50 border border-gray-300 rounded-xl hover:bg-gray-100 transition-colors"
-                      >
-                        <span className="text-xl">{selectedCountry.flag}</span>
-                        <span className="text-gray-700 font-medium">{selectedCountry.code}</span>
-                      </button>
+                      <div className="flex items-center px-3 bg-gray-100 rounded-l-xl border-2 border-r-0 border-gray-200">
+                        <span className="text-lg">{selectedCountry.flag}</span>
+                        <span className="ml-2 font-medium text-gray-700">{selectedCountry.code}</span>
+                      </div>
                       <input
-                        {...phoneForm.register('phone')}
                         type="tel"
-                        inputMode="tel"
+                        value={phoneNumber}
+                        onChange={(e) => setPhoneNumber(formatPhoneNumber(e.target.value))}
                         placeholder="(555) 123-4567"
-                        onChange={(e) => handlePhoneChange(e, phoneForm)}
-                        className={`flex-1 input-field ${phoneForm.formState.errors.phone ? 'input-field-error' : ''}`}
-                        autoComplete="tel"
+                        className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-r-xl focus:border-blue-400 focus:outline-none transition-colors"
+                        autoFocus
                       />
                     </div>
-                    {phoneForm.formState.errors.phone && (
-                      <p className="text-red-600 text-sm mt-2 flex items-center">
-                        <AlertCircle size={14} className="mr-1" />
-                        {phoneForm.formState.errors.phone.message}
-                      </p>
-                    )}
                   </div>
-                  
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Password
-                    </label>
-                    <div className="relative">
-                      <input
-                        {...phoneForm.register('password')}
-                        type={showPassword ? 'text' : 'password'}
-                        placeholder="Enter your password"
-                        className={`input-field pr-12 ${phoneForm.formState.errors.password ? 'input-field-error' : ''}`}
-                        autoComplete="current-password"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-gray-500 hover:text-gray-700 transition-colors"
-                      >
-                        {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                      </button>
+
+                  {/* Error Message */}
+                  {error && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                      <p className="text-red-700 text-sm">{error}</p>
                     </div>
-                    {phoneForm.formState.errors.password && (
-                      <p className="text-red-600 text-sm mt-2 flex items-center">
-                        <AlertCircle size={14} className="mr-1" />
-                        {phoneForm.formState.errors.password.message}
-                      </p>
-                    )}
-                  </div>
+                  )}
 
-                  {/* Remember Me */}
-                  <div className="flex items-center justify-between">
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={rememberMe}
-                        onChange={(e) => setRememberMe(e.target.checked)}
-                        className="w-5 h-5 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-                      />
-                      <span className="text-sm text-gray-700">Remember me</span>
-                    </label>
-                    <button type="button" className="text-sm text-orange-600 hover:text-orange-700 font-medium">
-                      Forgot password?
-                    </button>
-                  </div>
-
+                  {/* Submit Button */}
                   <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full btn-primary flex items-center justify-center space-x-2 haptic-medium"
+                    onClick={handleOtpRequest}
+                    disabled={loading || !phoneNumber}
+                    className="w-full py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-xl hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-[1.02] flex items-center justify-center space-x-2"
                   >
                     {loading ? (
                       <>
                         <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        <span>Signing in...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Lock size={20} />
-                        <span>Sign In Securely</span>
-                      </>
-                    )}
-                  </button>
-
-                  {/* Biometric Option */}
-                  <button
-                    type="button"
-                    className="w-full py-3 text-gray-600 hover:text-gray-900 font-medium flex items-center justify-center space-x-2 transition-colors"
-                  >
-                    <Fingerprint size={20} />
-                    <span>Use Biometric Login</span>
-                  </button>
-                </form>
-              )}
-
-              {/* Email Sign In */}
-              {mode === 'email' && (
-                <form onSubmit={emailForm.handleSubmit(handleEmailSignIn)} className="space-y-5">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Email Address
-                    </label>
-                    <input
-                      {...emailForm.register('email')}
-                      type="email"
-                      inputMode="email"
-                      placeholder="your@email.com"
-                      className={`input-field ${emailForm.formState.errors.email ? 'input-field-error' : ''}`}
-                      autoComplete="email"
-                    />
-                    {emailForm.formState.errors.email && (
-                      <p className="text-red-600 text-sm mt-2 flex items-center">
-                        <AlertCircle size={14} className="mr-1" />
-                        {emailForm.formState.errors.email.message}
-                      </p>
-                    )}
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Password
-                    </label>
-                    <div className="relative">
-                      <input
-                        {...emailForm.register('password')}
-                        type={showPassword ? 'text' : 'password'}
-                        placeholder="Enter your password"
-                        className={`input-field pr-12 ${emailForm.formState.errors.password ? 'input-field-error' : ''}`}
-                        autoComplete="current-password"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-gray-500 hover:text-gray-700 transition-colors"
-                      >
-                        {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                      </button>
-                    </div>
-                    {emailForm.formState.errors.password && (
-                      <p className="text-red-600 text-sm mt-2 flex items-center">
-                        <AlertCircle size={14} className="mr-1" />
-                        {emailForm.formState.errors.password.message}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Remember Me */}
-                  <div className="flex items-center justify-between">
-                    <label className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={rememberMe}
-                        onChange={(e) => setRememberMe(e.target.checked)}
-                        className="w-5 h-5 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-                      />
-                      <span className="text-sm text-gray-700">Remember me</span>
-                    </label>
-                    <button type="button" className="text-sm text-orange-600 hover:text-orange-700 font-medium">
-                      Forgot password?
-                    </button>
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full btn-primary flex items-center justify-center space-x-2 haptic-medium"
-                  >
-                    {loading ? (
-                      <>
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        <span>Signing in...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Lock size={20} />
-                        <span>Sign In Securely</span>
-                      </>
-                    )}
-                  </button>
-                </form>
-              )}
-
-              {/* OTP Sign In */}
-              {mode === 'otp' && !otpSent && (
-                <form onSubmit={otpForm.handleSubmit(handleSendOTP)} className="space-y-5">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Phone Number
-                    </label>
-                    <div className="flex space-x-2">
-                      <button
-                        type="button"
-                        onClick={() => setShowCountryPicker(!showCountryPicker)}
-                        className="flex items-center space-x-2 px-3 py-4 bg-gray-50 border border-gray-300 rounded-xl hover:bg-gray-100 transition-colors"
-                      >
-                        <span className="text-xl">{selectedCountry.flag}</span>
-                        <span className="text-gray-700 font-medium">{selectedCountry.code}</span>
-                      </button>
-                      <input
-                        {...otpForm.register('phone')}
-                        type="tel"
-                        inputMode="tel"
-                        placeholder="(555) 123-4567"
-                        onChange={(e) => handlePhoneChange(e, otpForm)}
-                        className={`flex-1 input-field ${otpForm.formState.errors.phone ? 'input-field-error' : ''}`}
-                        autoComplete="tel"
-                      />
-                    </div>
-                    {otpForm.formState.errors.phone && (
-                      <p className="text-red-600 text-sm mt-2 flex items-center">
-                        <AlertCircle size={14} className="mr-1" />
-                        {otpForm.formState.errors.phone.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                    <p className="text-blue-900 text-sm">
-                      We'll send you a 6-digit verification code via SMS
-                    </p>
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full btn-primary flex items-center justify-center space-x-2 haptic-medium"
-                  >
-                    {loading ? (
-                      <>
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        <span>Sending...</span>
+                        <span>Sending Code...</span>
                       </>
                     ) : (
                       <>
@@ -533,132 +509,98 @@ export default function AuthPage() {
                       </>
                     )}
                   </button>
-                </form>
-              )}
 
-              {/* OTP Verification */}
-              {mode === 'otp' && otpSent && (
-                <form onSubmit={otpForm.handleSubmit(handleOTPSignIn)} className="space-y-5">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Enter 6-Digit Code
-                    </label>
-                    <input
-                      {...otpForm.register('otp')}
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="000000"
-                      maxLength={6}
-                      className="input-field text-center text-2xl font-mono tracking-[0.5em]"
-                      autoComplete="one-time-code"
-                      autoFocus
-                    />
-                    {otpForm.formState.errors.otp && (
-                      <p className="text-red-600 text-sm mt-2 flex items-center">
-                        <AlertCircle size={14} className="mr-1" />
-                        {otpForm.formState.errors.otp.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-                    <p className="text-green-900 text-sm flex items-center">
-                      <CheckCircle size={16} className="mr-2" />
-                      Code sent to {otpForm.watch('phone')}
-                    </p>
-                  </div>
-
-                  <div className="flex space-x-3">
-                    <button
-                      type="button"
-                      onClick={() => setOtpSent(false)}
-                      className="flex-1 btn-secondary flex items-center justify-center space-x-2"
-                    >
-                      <ChevronLeft size={20} />
-                      <span>Back</span>
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="flex-1 btn-primary flex items-center justify-center space-x-2 haptic-medium"
-                    >
-                      {loading ? (
-                        <>
-                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          <span>Verifying...</span>
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle size={20} />
-                          <span>Verify</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-
+                  {/* Back Button */}
                   <button
-                    type="button"
+                    onClick={() => setAuthMethod(null)}
                     className="w-full py-3 text-gray-600 hover:text-gray-900 font-medium transition-colors"
                   >
-                    Didn't receive code? Resend
+                    Back to options
                   </button>
-                </form>
-              )}
-            </div>
+                </div>
+              </div>
 
-            {/* Help Text */}
-            <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600">
-                Need help? Contact your{' '}
-                <a href="#" className="text-orange-600 hover:text-orange-700 font-medium">
-                  safety administrator
-                </a>
+              {/* Security Note */}
+              <p className="text-center text-sm text-gray-500 mt-6">
+                Your phone number is encrypted and never shared
               </p>
             </div>
 
-            {/* Security Badge */}
-            <div className="mt-8 flex items-center justify-center space-x-2 text-gray-500">
-              <Lock size={16} />
-              <span className="text-xs">256-bit SSL Encrypted</span>
-            </div>
+            {/* Country Picker Modal */}
+            {showCountryPicker && (
+              <div className="fixed inset-0 z-50 flex items-end justify-center">
+                <div 
+                  className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+                  onClick={() => {
+                    setShowCountryPicker(false)
+                    setCountrySearch('')
+                  }}
+                />
+                <div className="relative w-full max-h-[70vh] bg-white rounded-t-3xl shadow-2xl animate-slide-up">
+                  {/* Modal Header */}
+                  <div className="sticky top-0 bg-white border-b border-gray-200 p-4">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Select Country</h3>
+                    {/* Search Input */}
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                      <input
+                        type="text"
+                        value={countrySearch}
+                        onChange={(e) => setCountrySearch(e.target.value)}
+                        placeholder="Search country or code..."
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:border-blue-400 focus:outline-none"
+                        autoFocus
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Country List */}
+                  <div className="overflow-y-auto max-h-[50vh]">
+                    {filteredCountries.map((country) => (
+                      <button
+                        key={country.code}
+                        onClick={() => {
+                          setSelectedCountry(country)
+                          setShowCountryPicker(false)
+                          setCountrySearch('')
+                        }}
+                        className={`w-full px-4 py-3 flex items-center space-x-3 hover:bg-gray-50 transition-colors ${
+                          selectedCountry.code === country.code ? 'bg-blue-50' : ''
+                        }`}
+                      >
+                        <span className="text-2xl">{country.flag}</span>
+                        <span className="flex-1 text-left text-gray-900">{country.country}</span>
+                        <span className="text-gray-500">{country.code}</span>
+                        {selectedCountry.code === country.code && (
+                          <Check className="text-blue-600" size={20} />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
+        )
+      }
+
+      return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <OtpVerification
+            phoneNumber={phoneNumber}
+            onVerify={handleOtpVerification}
+            onResend={handleOtpRequest}
+            onCancel={() => {
+              setPhoneNumber('')
+              setAuthMethod(null)
+            }}
+            error={error || undefined}
+            loading={loading}
+          />
         </div>
+      )
 
-        {/* Country Picker Modal */}
-        {showCountryPicker && (
-          <div className="fixed inset-0 z-50 flex items-end justify-center">
-            <div 
-              className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-              onClick={() => setShowCountryPicker(false)}
-            />
-            <div className="relative w-full max-h-[60vh] bg-white rounded-t-3xl shadow-2xl animate-slide-up">
-              <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">
-                <h3 className="text-lg font-semibold text-gray-900">Select Country</h3>
-              </div>
-              <div className="overflow-y-auto scrollbar-hide">
-                {countryCodesData.map((country) => (
-                  <button
-                    key={country.code}
-                    onClick={() => {
-                      setSelectedCountry(country)
-                      phoneForm.setValue('countryCode', country.code)
-                      setShowCountryPicker(false)
-                    }}
-                    className="w-full px-6 py-3 flex items-center space-x-3 hover:bg-gray-50 transition-colors"
-                  >
-                    <span className="text-2xl">{country.flag}</span>
-                    <span className="flex-1 text-left text-gray-900">{country.country}</span>
-                    <span className="text-gray-500">{country.code}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Install Prompt */}
-      <InstallPrompt />
-    </>
-  )
+    default:
+      return null
+  }
 }

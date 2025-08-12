@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Shield, Check, AlertCircle, Loader2, ChevronDown, Search, X } from 'lucide-react'
 import { supabase } from '../lib/supabase'
-import { formatPhoneNumber, unformatPhoneNumber, countryCodesData } from '../utils/phoneFormatter'
+import { formatPhoneForDisplay, formatPhoneForStorage, COUNTRIES } from '@safeping/phone-utils'
 
 type VerificationStep = 'loading' | 'verify' | 'success' | 'error'
 
-export function StaffInvite() {
+export function InvitePage() {
   const navigate = useNavigate()
   const { token } = useParams()
   const [searchParams] = useSearchParams()
@@ -18,7 +18,7 @@ export function StaffInvite() {
   // For manual code entry
   const [phoneNumber, setPhoneNumber] = useState('')
   const [verificationCode, setVerificationCode] = useState('')
-  const [selectedCountry, setSelectedCountry] = useState(countryCodesData[0])
+  const [selectedCountry, setSelectedCountry] = useState(COUNTRIES[0])
   const [showCountryPicker, setShowCountryPicker] = useState(false)
   const [countrySearch, setCountrySearch] = useState('')
   
@@ -43,7 +43,7 @@ export function StaffInvite() {
       // Check if we have phone number in URL params (for manual entry)
       const phone = searchParams.get('phone')
       if (phone) {
-        setPhoneNumber(formatPhoneNumber(phone))
+        setPhoneNumber(formatPhoneForDisplay(phone))
       }
       setStep('verify')
     }
@@ -77,11 +77,11 @@ export function StaffInvite() {
         // Pre-fill the phone number if provided
         if (data.phoneNumber) {
           // Extract country code and format the number
-          const country = countryCodesData.find(c => data.phoneNumber.startsWith(c.code))
+          const country = COUNTRIES.find(c => data.phoneNumber.startsWith(c.dialCode))
           if (country) {
             setSelectedCountry(country)
             const phoneWithoutCode = data.phoneNumber.substring(country.code.length)
-            setPhoneNumber(formatPhoneNumber(phoneWithoutCode))
+            setPhoneNumber(formatPhoneForDisplay(phoneWithoutCode))
           }
         }
         setStep('verify')
@@ -119,7 +119,7 @@ export function StaffInvite() {
     setError(null)
 
     try {
-      const fullPhoneNumber = selectedCountry.code + unformatPhoneNumber(phoneNumber)
+      const fullPhoneNumber = selectedCountry.dialCode + formatPhoneForStorage(phoneNumber)
       const deviceInfo = {
         deviceId: getDeviceId(),
         deviceType: 'pwa',
@@ -177,8 +177,8 @@ export function StaffInvite() {
   }
 
   // Filter countries for picker
-  const filteredCountries = countryCodesData.filter(country => 
-    country.country.toLowerCase().includes(countrySearch.toLowerCase()) ||
+  const filteredCountries = COUNTRIES.filter(country => 
+    country.name.toLowerCase().includes(countrySearch.toLowerCase()) ||
     country.code.includes(countrySearch)
   )
 
@@ -303,7 +303,7 @@ export function StaffInvite() {
                 <input
                   type="tel"
                   value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(formatPhoneNumber(e.target.value))}
+                  onChange={(e) => setPhoneNumber(formatPhoneForDisplay(e.target.value))}
                   placeholder="21 234 5678"
                   className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-r-xl focus:border-[#15a2a6] focus:outline-none transition-colors"
                 />
@@ -423,20 +423,20 @@ export function StaffInvite() {
             <div className="overflow-y-auto max-h-[50vh]">
               {filteredCountries.map((country) => (
                 <button
-                  key={country.code + country.country}
+                  key={country.code + country.name}
                   onClick={() => {
                     setSelectedCountry(country)
                     setShowCountryPicker(false)
                     setCountrySearch('')
                   }}
                   className={`w-full px-4 py-3 flex items-center space-x-3 hover:bg-gray-50 transition-colors ${
-                    selectedCountry.code === country.code && selectedCountry.country === country.country ? 'bg-teal-50' : ''
+                    selectedCountry.code === country.code && selectedCountry.name === country.name ? 'bg-teal-50' : ''
                   }`}
                 >
                   <span className="text-2xl">{country.flag}</span>
-                  <span className="flex-1 text-left text-gray-900">{country.country}</span>
+                  <span className="flex-1 text-left text-gray-900">{country.name}</span>
                   <span className="text-gray-500">{country.code}</span>
-                  {selectedCountry.code === country.code && selectedCountry.country === country.country && (
+                  {selectedCountry.code === country.code && selectedCountry.name === country.name && (
                     <Check className="text-[#15a2a6]" size={20} />
                   )}
                 </button>

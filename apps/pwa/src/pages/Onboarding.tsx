@@ -43,7 +43,7 @@ interface AuthMethod {
   biometricEnabled?: boolean
 }
 
-export function StaffOnboarding() {
+export function OnboardingPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const fileInputRef = useRef<HTMLInputElement>(null)

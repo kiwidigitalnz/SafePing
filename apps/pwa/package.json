@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.1.1",
+    "@safeping/phone-utils": "workspace:*",
     "@supabase/supabase-js": "^2.54.0",
     "@tanstack/react-query": "^5.83.0",
     "@types/uuid": "^10.0.0",

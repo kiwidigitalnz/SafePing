@@ -1,12 +1,12 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
-import { SMSService, getSMSConfig, formatPhoneNumber, isValidPhoneNumber } from '../_shared/sms.ts'
+import { SMSService, getSMSConfig, formatPhoneNumber, isValidPhoneNumber } from '../_shared/sms-adapter.ts'
 
 interface InvitationRequest {
   phoneNumber: string
   invitationToken: string
-  workerName: string
+  staffName: string
   organizationName: string
   verificationCode: string  // Required 6-digit code
 }
@@ -20,13 +20,13 @@ serve(async (req) => {
   try {
     // Parse request body
     const body: InvitationRequest = await req.json()
-    const { phoneNumber, invitationToken, workerName, organizationName, verificationCode } = body
+    const { phoneNumber, invitationToken, staffName, organizationName, verificationCode } = body
 
-    console.log(`Sending invitation to ${workerName} at ${phoneNumber}`)
+    console.log(`Sending invitation to ${staffName} at ${phoneNumber}`)
     console.log('Verification code:', verificationCode)
 
     // Validate required fields
-    if (!phoneNumber || !invitationToken || !workerName || !verificationCode) {
+    if (!phoneNumber || !invitationToken || !staffName || !verificationCode) {
       return new Response(
         JSON.stringify({ error: 'Missing required fields' }),
         { 
@@ -84,7 +84,7 @@ serve(async (req) => {
     const invitationUrl = `${baseUrl}/invite/${invitationToken}`
 
     // Prepare SMS message with 6-digit verification code
-    const message = `Hi ${workerName.split(' ')[0]}! 👋
+    const message = `Hi ${staffName.split(' ')[0]}! 👋
 
 ${organizationName || 'SafePing'} has invited you to join their team on the SafePing mobile app.
 
@@ -142,7 +142,7 @@ Note: This invitation is for the mobile app only, not the web dashboard.`
 
       // Update invitation status
       const { error: updateError } = await supabaseClient
-        .from('worker_invitations')
+        .from('staff_invitations')
         .update({ 
           sms_sent_at: new Date().toISOString(),
           sms_delivery_status: 'sent',
@@ -176,7 +176,7 @@ Note: This invitation is for the mobile app only, not the web dashboard.`
     )
 
   } catch (error) {
-    console.error('Error in send-worker-invitation:', error)
+    console.error('Error in send-staff-invitation:', error)
     return new Response(
       JSON.stringify({ 
         error: error.message,
@@ -191,13 +191,13 @@ Note: This invitation is for the mobile app only, not the web dashboard.`
 })
 
 /* To test this function:
-curl -i --location --request POST 'http://localhost:54321/functions/v1/send-worker-invitation' \
+curl -i --location --request POST 'http://localhost:54321/functions/v1/send-staff-invitation' \
   --header 'Authorization: Bearer YOUR_ANON_KEY' \
   --header 'Content-Type: application/json' \
   --data '{
     "phoneNumber": "+64212345678",
     "invitationToken": "test-token-123",
-    "workerName": "John Doe",
+    "staffName": "John Doe",
     "organizationName": "ACME Corp",
     "verificationCode": "123456"
   }'

@@ -63,7 +63,7 @@ serve(async (req) => {
 
       // Validate session
       const { data: sessionValidation } = await supabaseClient
-        .rpc('validate_worker_session', {
+        .rpc('validate_staff_session', {
           p_session_token: sessionToken,
           p_device_id: deviceId
         })
@@ -130,7 +130,7 @@ serve(async (req) => {
 
       // Validate session
       const { data: sessionValidation } = await supabaseClient
-        .rpc('validate_worker_session', {
+        .rpc('validate_staff_session', {
           p_session_token: sessionToken,
           p_device_id: deviceId
         })
@@ -191,7 +191,7 @@ serve(async (req) => {
 
       // Use database function for rate limiting
       const { data: verificationResult } = await supabaseClient
-        .rpc('verify_worker_pin', {
+        .rpc('verify_staff_pin', {
           p_user_id: sessionValidation.user_id,
           p_pin_hash: isValid ? user.pin_hash : 'invalid',
           p_device_id: deviceId
@@ -209,7 +209,7 @@ serve(async (req) => {
 
       // Update session activity
       await supabaseClient
-        .from('worker_sessions')
+        .from('staff_sessions')
         .update({ last_active_at: new Date().toISOString() })
         .eq('session_token', sessionToken)
 
@@ -235,7 +235,7 @@ serve(async (req) => {
     }
 
   } catch (error) {
-    console.error('Error in validate-worker-pin:', error)
+    console.error('Error in validate-staff-pin:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       { 

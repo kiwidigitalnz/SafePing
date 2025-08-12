@@ -1,7 +1,7 @@
 import { supabase } from './supabase'
 import { getDeviceInfo, getDeviceId } from '../utils/device'
 
-interface WorkerSession {
+interface StaffSession {
   token: string
   refreshToken: string
   expiresAt: string
@@ -13,11 +13,11 @@ interface AuthState {
   isAuthenticated: boolean
   requiresPinSetup: boolean
   requiresBiometricSetup: boolean
-  session: WorkerSession | null
+  session: StaffSession | null
 }
 
-class WorkerAuthManager {
-  private static instance: WorkerAuthManager
+class StaffAuthManager {
+  private static instance: StaffAuthManager
   private authState: AuthState = {
     isAuthenticated: false,
     requiresPinSetup: false,
@@ -29,19 +29,19 @@ class WorkerAuthManager {
     this.loadSession()
   }
 
-  static getInstance(): WorkerAuthManager {
-    if (!WorkerAuthManager.instance) {
-      WorkerAuthManager.instance = new WorkerAuthManager()
+  static getInstance(): StaffAuthManager {
+    if (!StaffAuthManager.instance) {
+      StaffAuthManager.instance = new StaffAuthManager()
     }
     return WorkerAuthManager.instance
   }
 
   // Load session from localStorage
   private loadSession() {
-    const sessionData = localStorage.getItem('worker_session')
+    const sessionData = localStorage.getItem('staff_session')
     if (sessionData) {
       try {
-        const session = JSON.parse(sessionData) as WorkerSession
+        const session = JSON.parse(sessionData) as StaffSession
         // Check if session is still valid
         if (new Date(session.expiresAt) > new Date()) {
           this.authState.session = session
@@ -58,15 +58,15 @@ class WorkerAuthManager {
   }
 
   // Save session to localStorage
-  private saveSession(session: WorkerSession) {
-    localStorage.setItem('worker_session', JSON.stringify(session))
+  private saveSession(session: StaffSession) {
+    localStorage.setItem('staff_session', JSON.stringify(session))
     this.authState.session = session
     this.authState.isAuthenticated = true
   }
 
   // Clear session
   clearSession() {
-    localStorage.removeItem('worker_session')
+    localStorage.removeItem('staff_session')
     localStorage.removeItem('biometric_credentials')
     localStorage.removeItem('biometric_enabled')
     localStorage.removeItem('last_biometric_auth')
@@ -98,7 +98,7 @@ class WorkerAuthManager {
 
       if (data.success) {
         // Save session
-        const session: WorkerSession = {
+        const session: StaffSession = {
           token: data.session.token,
           refreshToken: data.session.refreshToken,
           expiresAt: data.session.expiresAt,
@@ -241,7 +241,7 @@ class WorkerAuthManager {
       // Create new session
       const deviceInfo = getDeviceInfo()
       const { data: sessionData, error: sessionError } = await supabase
-        .rpc('create_worker_session', {
+        .rpc('create_staff_session', {
           p_user_id: userData.id,
           p_device_id: deviceInfo.deviceId,
           p_device_info: deviceInfo
@@ -252,7 +252,7 @@ class WorkerAuthManager {
       }
 
       // Save session
-      const session: WorkerSession = {
+      const session: StaffSession = {
         token: sessionData.session_token,
         refreshToken: sessionData.refresh_token,
         expiresAt: sessionData.expires_at,
@@ -280,7 +280,7 @@ class WorkerAuthManager {
 
     try {
       const { data, error } = await supabase
-        .rpc('validate_worker_session', {
+        .rpc('validate_staff_session', {
           p_session_token: this.authState.session.token,
           p_device_id: getDeviceId()
         })
@@ -337,13 +337,13 @@ class WorkerAuthManager {
   }
 
   // Get current session
-  getSession(): WorkerSession | null {
+  getSession(): StaffSession | null {
     return this.authState.session
   }
 }
 
 // Export singleton instance
-export const workerAuth = WorkerAuthManager.getInstance()
+export const staffAuth = StaffAuthManager.getInstance()
 
 // Export types
-export type { WorkerSession, AuthState }
+export type { StaffSession, AuthState }

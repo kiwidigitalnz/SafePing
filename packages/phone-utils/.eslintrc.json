@@ -1,0 +1,4 @@
+{
+  "extends": ["@safeping/config/eslint"],
+  "root": true
+}
