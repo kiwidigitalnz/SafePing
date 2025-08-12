@@ -20,7 +20,6 @@ import { CheckIns } from './pages/CheckIns'
 import { Schedules } from './pages/Schedules'
 import { Incidents } from './pages/Incidents'
 import { Settings } from './pages/Settings'
-import InviteStaffPage from './pages/InviteStaff'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -129,7 +128,6 @@ function App() {
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="staff" element={<Staff />} />
-            <Route path="staff/invite" element={<InviteStaffPage />} />
             <Route path="checkins" element={<CheckIns />} />
             <Route path="schedules" element={<Schedules />} />
             <Route path="incidents" element={<Incidents />} />
