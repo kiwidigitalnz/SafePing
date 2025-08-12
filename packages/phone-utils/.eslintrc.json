@@ -1,7 +1,8 @@
 {
   "env": {
     "es2021": true,
-    "node": true
+    "node": true,
+    "browser": true
   },
   "extends": [
     "eslint:recommended",
@@ -16,5 +17,6 @@
     "@typescript-eslint"
   ],
   "rules": {},
-  "root": true
+  "root": true,
+  "ignorePatterns": ["dist/", "build/", "node_modules/"]
 }
