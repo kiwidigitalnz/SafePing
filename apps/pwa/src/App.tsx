@@ -11,6 +11,7 @@ import EmergencyPage from './pages/Emergency'
 import { WorkerAuth } from './pages/WorkerAuth'
 import { StaffInvite } from './pages/StaffInvite'
 import { StaffSetup } from './pages/StaffSetup'
+import { StaffOnboarding } from './pages/StaffOnboarding'
 
 // Layout
 import Layout from './components/Layout'
@@ -35,10 +36,11 @@ function App() {
     checkWorkerSession()
   }, [])
 
-  // Check if this is an invitation or setup route
+  // Check if this is an invitation, setup, or onboarding route
   const isInvitationRoute = location.pathname.startsWith('/invite')
   const isSetupRoute = location.pathname === '/setup'
-  const isPublicRoute = isInvitationRoute || isSetupRoute
+  const isOnboardingRoute = location.pathname === '/onboarding'
+  const isPublicRoute = isInvitationRoute || isSetupRoute || isOnboardingRoute
 
   if (loading && !isPublicRoute) {
     return (
@@ -59,6 +61,7 @@ function App() {
         <Route path="/invite/:token" element={<StaffInvite />} />
         <Route path="/invite" element={<StaffInvite />} />
         <Route path="/setup" element={<StaffSetup />} />
+        <Route path="/onboarding" element={<StaffOnboarding />} />
         <Route path="*" element={<Navigate to="/auth" replace />} />
       </Routes>
     )

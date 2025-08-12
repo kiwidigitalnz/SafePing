@@ -5,6 +5,7 @@ import { Search, Users, UserPlus, MoreVertical, Edit, Trash2, Eye, UserCheck, Us
 import { useAuthStore } from '../store/auth'
 import { StaffForm } from '../components/StaffForm'
 import { StaffDetail } from '../components/StaffDetail'
+import { ToastContainer, useToast } from '../components/Toast'
 import { supabase } from '../lib/supabase'
 import { 
   getUsers, 
@@ -21,14 +22,18 @@ import type { Database } from '../lib/supabase'
 type User = Database['public']['Tables']['users']['Row']
 type ViewMode = 'list' | 'create' | 'edit' | 'detail'
 
-interface StaffMember extends User {
-  // Add any additional computed properties if needed
+// Database roles match exactly what's in the database
+type DBRole = 'super_admin' | 'org_admin' | 'admin' | 'staff'
+
+interface StaffMember extends Omit<User, 'role'> {
+  role: DBRole
 }
 
 export function Staff() {
   const { user } = useAuthStore()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
+  const { toasts, removeToast, showSuccess, showError, showInfo } = useToast()
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [selectedStaff, setSelectedStaff] = useState<StaffMember | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
@@ -40,7 +45,10 @@ export function Staff() {
   // Fetch all users
   const { data: allUsers = [], isLoading } = useQuery({
     queryKey: ['users', user?.organization_id],
-    queryFn: () => getUsers(user!.organization_id!),
+    queryFn: async () => {
+      const users = await getUsers(user!.organization_id!)
+      return users as StaffMember[]
+    },
     enabled: !!user?.organization_id
   })
 
@@ -54,7 +62,10 @@ export function Staff() {
   // Search users when search term changes
   const { data: searchResults } = useQuery({
     queryKey: ['search-users', user?.organization_id, searchTerm],
-    queryFn: () => searchUsers(user!.organization_id!, searchTerm),
+    queryFn: async () => {
+      const users = await searchUsers(user!.organization_id!, searchTerm)
+      return users as StaffMember[]
+    },
     enabled: !!user?.organization_id && searchTerm.length > 2
   })
 
@@ -69,7 +80,7 @@ export function Staff() {
   })
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<User> }) => updateUser(id, data),
+    mutationFn: ({ id, data }: { id: string; data: any }) => updateUser(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] })
       queryClient.invalidateQueries({ queryKey: ['user-stats'] })
@@ -104,31 +115,51 @@ export function Staff() {
     return roleMatch && statusMatch
   }) || []
 
-  const handleCreate = async (data: Partial<User>) => {
-    await createMutation.mutateAsync({
+  const handleCreate = async (data: any) => {
+    const dbData = {
       ...data,
-      organization_id: user!.organization_id!
-    })
+      role: data.role || 'staff',
+      organization_id: user!.organization_id!,
+      first_name: data.first_name || '',
+      last_name: data.last_name || ''
+    }
+    await createMutation.mutateAsync(dbData)
   }
 
-  const handleUpdate = async (data: Partial<User>) => {
+  const handleUpdate = async (data: any) => {
     if (!selectedStaff) return
     await updateMutation.mutateAsync({ id: selectedStaff.id, data })
   }
 
   const handleDelete = async (staff: StaffMember) => {
     if (confirm(`Are you sure you want to delete ${staff.first_name} ${staff.last_name}? This action cannot be undone.`)) {
-      await deleteMutation.mutateAsync(staff.id)
-      setOpenMenuId(null)
+      try {
+        await deleteMutation.mutateAsync(staff.id)
+        showSuccess('Staff member deleted', `${staff.first_name} ${staff.last_name} has been removed from the system.`)
+        setOpenMenuId(null)
+      } catch (error: any) {
+        showError('Failed to delete staff member', error.message || 'An error occurred while deleting the staff member.')
+      }
     }
   }
 
   const handleToggleActive = async (staff: StaffMember) => {
-    await toggleActiveMutation.mutateAsync({ 
-      id: staff.id, 
-      isActive: !staff.is_active 
-    })
-    setOpenMenuId(null)
+    try {
+      await toggleActiveMutation.mutateAsync({ 
+        id: staff.id, 
+        isActive: !staff.is_active 
+      })
+      
+      if (!staff.is_active) {
+        showSuccess('Staff member activated', `${staff.first_name} ${staff.last_name} has been activated.`)
+      } else {
+        showInfo('Staff member deactivated', `${staff.first_name} ${staff.last_name} has been deactivated.`)
+      }
+      
+      setOpenMenuId(null)
+    } catch (error: any) {
+      showError('Failed to update staff status', error.message || 'An error occurred while updating the staff member status.')
+    }
   }
 
   const handleEdit = (staff: StaffMember) => {
@@ -150,12 +181,15 @@ export function Staff() {
 
   const handleResendSMS = async (staff: StaffMember) => {
     if (!staff.phone) {
-      alert('This staff member does not have a phone number on file.')
+      showError('Cannot send SMS', 'This staff member does not have a phone number on file.')
       return
     }
 
     setSendingSMS(staff.id)
     setOpenMenuId(null)
+    
+    // Show initial info toast
+    showInfo('Sending SMS invitation...', `Preparing to send invitation to ${staff.first_name} ${staff.last_name}`)
 
     try {
       // Generate a new invitation token
@@ -175,30 +209,32 @@ export function Staff() {
         throw new Error('Failed to update invitation token')
       }
 
-      // Create or update worker invitation record
-      const { error: invitationError } = await supabase
-        .from('worker_invitations')
-        .upsert({
-          user_id: staff.id,
-          organization_id: user?.organization_id,
-          invited_by: user?.id,
-          invitation_token: invitationToken,
-          phone_number: staff.phone,
-          status: 'pending',
-          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
-        }, {
-          onConflict: 'user_id'
+      // Use the create_staff_invitation function which handles cancelling old invitations
+      const { data: invitationData, error: invitationError } = await supabase
+        .rpc('create_staff_invitation', {
+          p_user_id: staff.id,
+          p_organization_id: user?.organization_id,
+          p_phone_number: staff.phone,
+          p_invited_by: user?.id
         })
 
       if (invitationError) {
-        console.error('Error creating/updating invitation record:', invitationError)
-        throw new Error('Failed to create invitation record')
+        console.error('Error creating invitation record:', invitationError)
+        throw new Error(`Failed to create invitation record: ${invitationError.message}`)
       }
 
-      // Send SMS via edge function
+      if (!invitationData || invitationData.length === 0) {
+        throw new Error('Failed to create invitation - no data returned')
+      }
+
+      // Get the verification code from the response
+      const verificationCode = invitationData[0].verification_code
+
+      // Send SMS via edge function with the verification code
       console.log('Invoking send-worker-invitation function with:', {
         phoneNumber: staff.phone,
-        invitationToken,
+        invitationToken: invitationData[0].invitation_token,
+        verificationCode,
         workerName: `${staff.first_name} ${staff.last_name}`,
         organizationName: 'SafePing'
       })
@@ -206,7 +242,8 @@ export function Staff() {
       const { data, error } = await supabase.functions.invoke('send-worker-invitation', {
         body: {
           phoneNumber: staff.phone,
-          invitationToken,
+          invitationToken: invitationData[0].invitation_token,
+          verificationCode,
           workerName: `${staff.first_name} ${staff.last_name}`,
           organizationName: 'SafePing'
         }
@@ -223,37 +260,40 @@ export function Staff() {
         throw new Error(data.error || 'Failed to send SMS')
       }
 
-      // Show success message
-      alert(`SMS invitation resent to ${staff.first_name} ${staff.last_name} at ${staff.phone}`)
+      // Show success message with verification code
+      showSuccess(
+        'SMS invitation sent successfully!', 
+        `Invitation sent to ${staff.first_name} ${staff.last_name} at ${staff.phone}. They will receive a 6-digit verification code to complete setup.`
+      )
       
       // Refresh the user list
       queryClient.invalidateQueries({ queryKey: ['users'] })
     } catch (error: any) {
       console.error('Error resending SMS:', error)
       const errorMessage = error.message || error.error || 'Unknown error'
-      alert(`Failed to resend SMS: ${errorMessage}`)
+      showError('Failed to send SMS invitation', errorMessage)
     } finally {
       setSendingSMS(null)
     }
   }
 
-  const getRoleLabel = (role: string) => {
+  const getRoleLabel = (role: DBRole | string) => {
     switch (role) {
       case 'super_admin': return 'Super Admin'
-      case 'admin': return 'Admin'
-      case 'supervisor': return 'Supervisor'
-      case 'worker': return 'Staff Member'
+      case 'org_admin': return 'Organization Admin'
+      case 'admin': return 'Administrator'
+      case 'staff': return 'Staff Member'
       default: return role
     }
   }
 
-  const getRoleBadgeColor = (role: string) => {
+  const getRoleBadgeColor = (role: DBRole | string) => {
     switch (role) {
-      case 'super_admin': return 'bg-purple-100 text-purple-800'
-      case 'admin': return 'bg-blue-100 text-blue-800'
-      case 'supervisor': return 'bg-green-100 text-green-800'
-      case 'worker': return 'bg-gray-100 text-gray-800'
-      default: return 'bg-gray-100 text-gray-800'
+      case 'super_admin': return 'bg-gradient-to-r from-red-500 to-red-600 text-white'
+      case 'org_admin': return 'bg-gradient-to-r from-purple-500 to-purple-600 text-white'
+      case 'admin': return 'bg-gradient-to-r from-blue-500 to-blue-600 text-white'
+      case 'staff': return 'bg-gradient-to-r from-gray-500 to-gray-600 text-white'
+      default: return 'bg-gradient-to-r from-gray-500 to-gray-600 text-white'
     }
   }
 
@@ -268,8 +308,12 @@ export function Staff() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <>
+      {/* Toast Notifications */}
+      <ToastContainer toasts={toasts} onClose={removeToast} />
+      
+      <div className="space-y-6">
+        {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Staff Management</h1>
@@ -280,7 +324,7 @@ export function Staff() {
         
         {viewMode === 'list' && (
           <button
-            onClick={() => navigate('/staff/invite')}
+            onClick={() => setViewMode('create')}
             className="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-[#15a2a6] to-teal-500 text-white rounded-xl font-semibold hover:from-[#128a8e] hover:to-teal-600 transform transition-all hover:scale-[1.02] shadow-lg"
           >
             <UserPlus className="w-5 h-5 mr-2" />
@@ -372,7 +416,7 @@ export function Staff() {
                       Staff Members
                     </dt>
                     <dd className="text-2xl font-bold text-gray-900">
-                      {stats.by_role.worker || 0}
+                      {stats.by_role.staff || 0}
                     </dd>
                   </dl>
                 </div>
@@ -406,10 +450,9 @@ export function Staff() {
                 className="px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#15a2a6] focus:border-transparent transition-all bg-white"
               >
                 <option value="all">All Roles</option>
-                <option value="super_admin">Super Admin</option>
-                <option value="admin">Admin</option>
-                <option value="supervisor">Supervisor</option>
-                <option value="worker">Staff Member</option>
+                <option value="org_admin">Organization Admin</option>
+                <option value="admin">Administrator</option>
+                <option value="staff">Staff Member</option>
               </select>
               
               <select
@@ -455,51 +498,70 @@ export function Staff() {
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-gray-200">
+            <div className="divide-y divide-gray-100">
               {filteredUsers.map((staff) => (
-                <div key={staff.id} className="p-6 hover:bg-gray-50">
+                <div key={staff.id} className="p-6 hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-50/50 transition-all">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
                       <div className="flex-shrink-0">
-                        <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
-                          <span className="text-sm font-medium text-gray-700">
+                        <div className="w-12 h-12 bg-gradient-to-br from-[#15a2a6] to-teal-500 rounded-xl flex items-center justify-center shadow-md">
+                          <span className="text-lg font-bold text-white">
                             {staff.first_name[0]}{staff.last_name[0]}
                           </span>
                         </div>
                       </div>
                       
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center space-x-2">
-                          <p className="text-sm font-medium text-gray-900 truncate">
+                        <div className="flex items-center space-x-3">
+                          <p className="text-base font-semibold text-gray-900 truncate">
                             {staff.first_name} {staff.last_name}
                           </p>
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleBadgeColor(staff.role)}`}>
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold shadow-sm ${getRoleBadgeColor(staff.role)}`}>
                             {getRoleLabel(staff.role)}
                           </span>
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${
                             staff.is_active 
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-red-100 text-red-800'
+                              ? 'bg-green-100 text-green-800 border-green-200' 
+                              : 'bg-red-100 text-red-800 border-red-200'
                           }`}>
-                            {staff.is_active ? 'Active' : 'Inactive'}
+                            {staff.is_active ? (
+                              <>
+                                <UserCheck className="w-3 h-3 mr-1" />
+                                Active
+                              </>
+                            ) : (
+                              <>
+                                <UserX className="w-3 h-3 mr-1" />
+                                Inactive
+                              </>
+                            )}
                           </span>
                         </div>
                         
-                        <div className="mt-1 flex items-center space-x-4 text-sm text-gray-500">
+                        <div className="mt-2 flex items-center space-x-4 text-sm text-gray-600">
                           {staff.email && (
-                            <span>{staff.email}</span>
+                            <span className="flex items-center">
+                              <div className="w-1 h-1 bg-gray-400 rounded-full mr-2" />
+                              {staff.email}
+                            </span>
                           )}
                           {staff.phone && (
                             <span className="flex items-center">
-                              <MessageSquare className="w-3 h-3 mr-1" />
+                              <div className="w-1 h-1 bg-gray-400 rounded-full mr-2" />
                               {staff.phone}
                             </span>
                           )}
                           {staff.employee_id && (
-                            <span>ID: {staff.employee_id}</span>
+                            <span className="flex items-center">
+                              <div className="w-1 h-1 bg-gray-400 rounded-full mr-2" />
+                              ID: {staff.employee_id}
+                            </span>
                           )}
                           {staff.department && (
-                            <span>{staff.department}</span>
+                            <span className="flex items-center">
+                              <div className="w-1 h-1 bg-gray-400 rounded-full mr-2" />
+                              {staff.department}
+                            </span>
                           )}
                         </div>
                       </div>
@@ -508,27 +570,27 @@ export function Staff() {
                     <div className="relative">
                       <button
                         onClick={() => setOpenMenuId(openMenuId === staff.id ? null : staff.id)}
-                        className="p-2 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-100"
+                        className="p-2.5 text-gray-400 hover:text-gray-600 rounded-xl hover:bg-gray-100 transition-all"
                       >
                         <MoreVertical className="w-5 h-5" />
                       </button>
                       
                       {openMenuId === staff.id && (
-                        <div className="absolute right-0 mt-1 w-56 bg-white rounded-md shadow-lg z-10 border border-gray-200">
-                          <div className="py-1">
+                        <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl z-10 border border-gray-100 overflow-hidden">
+                          <div className="py-2">
                             <button
                               onClick={() => handleViewDetail(staff)}
-                              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                              className="flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 transition-all"
                             >
-                              <Eye className="w-4 h-4 mr-2" />
+                              <Eye className="w-4 h-4 mr-3 text-gray-500" />
                               View Details
                             </button>
                             
                             <button
                               onClick={() => handleEdit(staff)}
-                              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                              className="flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 transition-all"
                             >
-                              <Edit className="w-4 h-4 mr-2" />
+                              <Edit className="w-4 h-4 mr-3 text-gray-500" />
                               Edit
                             </button>
                             
@@ -536,16 +598,16 @@ export function Staff() {
                               <button
                                 onClick={() => handleResendSMS(staff)}
                                 disabled={sendingSMS === staff.id}
-                                className="flex items-center w-full px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="flex items-center w-full px-4 py-2.5 text-sm text-blue-600 hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                               >
                                 {sendingSMS === staff.id ? (
                                   <>
-                                    <div className="w-4 h-4 mr-2 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                                    <div className="w-4 h-4 mr-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
                                     Sending...
                                   </>
                                 ) : (
                                   <>
-                                    <MessageSquare className="w-4 h-4 mr-2" />
+                                    <MessageSquare className="w-4 h-4 mr-3 text-blue-500" />
                                     Resend SMS Invitation
                                   </>
                                 )}
@@ -554,26 +616,28 @@ export function Staff() {
                             
                             <button
                               onClick={() => handleToggleActive(staff)}
-                              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                              className="flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 transition-all"
                             >
                               {staff.is_active ? (
                                 <>
-                                  <UserX className="w-4 h-4 mr-2" />
+                                  <UserX className="w-4 h-4 mr-3 text-orange-500" />
                                   Deactivate
                                 </>
                               ) : (
                                 <>
-                                  <UserCheck className="w-4 h-4 mr-2" />
+                                  <UserCheck className="w-4 h-4 mr-3 text-green-500" />
                                   Activate
                                 </>
                               )}
                             </button>
                             
+                            <div className="border-t border-gray-100 my-1"></div>
+                            
                             <button
                               onClick={() => handleDelete(staff)}
-                              className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                              className="flex items-center w-full px-4 py-2.5 text-sm text-red-600 hover:bg-gradient-to-r hover:from-red-50 hover:to-red-100 transition-all"
                             >
-                              <Trash2 className="w-4 h-4 mr-2" />
+                              <Trash2 className="w-4 h-4 mr-3" />
                               Delete
                             </button>
                           </div>
@@ -591,6 +655,7 @@ export function Staff() {
       {viewMode === 'create' && (
         <StaffForm
           organizationId={user.organization_id}
+          currentUserRole={user.role}
           onSubmit={handleCreate}
           onCancel={handleCancel}
           loading={createMutation.isPending}
@@ -601,6 +666,7 @@ export function Staff() {
         <StaffForm
           staff={selectedStaff}
           organizationId={user.organization_id}
+          currentUserRole={user.role}
           onSubmit={handleUpdate}
           onCancel={handleCancel}
           loading={updateMutation.isPending}
@@ -612,8 +678,22 @@ export function Staff() {
           staff={selectedStaff}
           onEdit={() => setViewMode('edit')}
           onClose={handleCancel}
+          onToggleActive={async (staff) => {
+            await toggleActiveMutation.mutateAsync({ 
+              id: staff.id, 
+              isActive: !staff.is_active 
+            })
+            setViewMode('list')
+            setSelectedStaff(null)
+          }}
+          onDelete={async (staff) => {
+            await deleteMutation.mutateAsync(staff.id)
+            setViewMode('list')
+            setSelectedStaff(null)
+          }}
         />
       )}
-    </div>
+      </div>
+    </>
   )
 }

@@ -69,8 +69,27 @@ export function StaffInvite() {
         }
       })
 
-      if (verifyError || !data?.success) {
-        setError(data?.error || verifyError?.message || 'Verification failed')
+      if (verifyError) {
+        setError(verifyError.message || 'Verification failed')
+        setStep('error')
+      } else if (data?.requiresCodeEntry) {
+        // Token is valid, but we need the user to enter the code
+        // Pre-fill the phone number if provided
+        if (data.phoneNumber) {
+          // Extract country code and format the number
+          const country = countryCodesData.find(c => data.phoneNumber.startsWith(c.code))
+          if (country) {
+            setSelectedCountry(country)
+            const phoneWithoutCode = data.phoneNumber.substring(country.code.length)
+            setPhoneNumber(formatPhoneNumber(phoneWithoutCode))
+          }
+        }
+        setStep('verify')
+        setError(null)
+        // Show a message to the user
+        setError('Please enter the 6-digit verification code sent to your phone')
+      } else if (!data?.success) {
+        setError(data?.error || 'Verification failed')
         setStep('error')
         
         // If already verified, redirect to auth
@@ -138,17 +157,20 @@ export function StaffInvite() {
     
     setStep('success')
     
-    // Redirect to setup or dashboard
+    // Redirect to onboarding or dashboard
     setTimeout(() => {
-      if (data.isFirstTimeSetup) {
-        navigate('/setup', { 
+      if (data.requiresPinSetup || !data.user.onboardingCompleted) {
+        // Redirect to onboarding with all necessary data
+        navigate('/onboarding', { 
           state: { 
             user: data.user,
             session: data.session,
+            invitationId: data.invitationId,
             requiresPinSetup: data.requiresPinSetup 
           } 
         })
       } else {
+        // User already set up, go to dashboard
         navigate('/dashboard')
       }
     }, 2000)
@@ -306,10 +328,18 @@ export function StaffInvite() {
               </p>
             </div>
 
-            {/* Error Message */}
+            {/* Error or Info Message */}
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                <p className="text-red-700 text-sm">{error}</p>
+              <div className={`border rounded-lg p-3 ${
+                error.includes('verification code') 
+                  ? 'bg-blue-50 border-blue-200' 
+                  : 'bg-red-50 border-red-200'
+              }`}>
+                <p className={`text-sm ${
+                  error.includes('verification code')
+                    ? 'text-blue-700'
+                    : 'text-red-700'
+                }`}>{error}</p>
               </div>
             )}
 

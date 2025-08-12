@@ -7,7 +7,7 @@ export interface User {
   phone: string | null
   first_name: string
   last_name: string
-  role: 'super_admin' | 'admin' | 'supervisor' | 'worker'
+  role: 'super_admin' | 'org_admin' | 'admin' | 'staff'
   is_active: boolean
   emergency_contact_name: string | null
   emergency_contact_phone: string | null
@@ -46,7 +46,7 @@ export async function getStaff(organizationId: string): Promise<User[]> {
     .from('users')
     .select('*')
     .eq('organization_id', organizationId)
-    .eq('role', 'worker')
+    .eq('role', 'staff')
     .eq('is_active', true)
     .order('first_name', { ascending: true })
 
@@ -91,7 +91,7 @@ export async function createUser(userData: {
   phone?: string | null
   first_name: string
   last_name: string
-  role?: 'super_admin' | 'admin' | 'supervisor' | 'worker'
+  role?: 'super_admin' | 'org_admin' | 'admin' | 'staff'
   emergency_contact_name?: string | null
   emergency_contact_phone?: string | null
   employee_id?: string | null
@@ -102,7 +102,7 @@ export async function createUser(userData: {
     .from('users')
     .insert({
       ...userData,
-      role: userData.role ?? 'worker',
+      role: userData.role ?? 'staff',
       is_active: true,
       settings: {}
     })
@@ -177,9 +177,9 @@ export async function getUserStats(organizationId: string): Promise<{
   inactive: number
   by_role: {
     super_admin: number
+    org_admin: number
     admin: number
-    supervisor: number
-    worker: number
+    staff: number
   }
 }> {
   const { data, error } = await supabase
@@ -201,7 +201,11 @@ export async function getUserStats(organizationId: string): Promise<{
       } else {
         acc.inactive++
       }
-      acc.by_role[user.role as keyof typeof acc.by_role]++
+      // Handle the role counting, defaulting to 0 if role doesn't exist
+      const role = user.role as keyof typeof acc.by_role
+      if (role in acc.by_role) {
+        acc.by_role[role]++
+      }
       return acc
     },
     {
@@ -210,9 +214,9 @@ export async function getUserStats(organizationId: string): Promise<{
       inactive: 0,
       by_role: {
         super_admin: 0,
+        org_admin: 0,
         admin: 0,
-        supervisor: 0,
-        worker: 0
+        staff: 0
       }
     }
   )

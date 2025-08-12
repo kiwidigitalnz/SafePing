@@ -3,8 +3,9 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
 
 interface VerifyRequest {
-  phoneNumber: string
-  verificationCode: string
+  phoneNumber?: string
+  verificationCode?: string
+  invitationToken?: string
   deviceInfo?: {
     deviceId: string
     deviceName?: string
@@ -35,16 +36,107 @@ serve(async (req) => {
     )
 
     const body: VerifyRequest = await req.json()
-    const { phoneNumber, verificationCode, deviceInfo } = body
+    const { phoneNumber, verificationCode, invitationToken, deviceInfo } = body
 
-    console.log('Verification request:', { phoneNumber, verificationCode, deviceId: deviceInfo?.deviceId })
+    console.log('Verification request:', { phoneNumber, verificationCode, invitationToken, deviceId: deviceInfo?.deviceId })
 
-    // Validate required fields
-    if (!phoneNumber || !verificationCode) {
+    let data, error
+
+    // Handle token-based verification
+    if (invitationToken) {
+      console.log('Verifying with invitation token:', invitationToken)
+      
+      // First, get invitation details using the token
+      const { data: tokenData, error: tokenError } = await supabaseClient.rpc('verify_staff_with_token', {
+        p_invitation_token: invitationToken,
+        p_device_id: deviceInfo?.deviceId || null,
+        p_device_info: deviceInfo || {}
+      })
+
+      if (tokenError) {
+        console.error('Token verification error:', tokenError)
+        return new Response(
+          JSON.stringify({ 
+            success: false,
+            error: 'Invalid or expired invitation link',
+            errorCode: 'INVALID_TOKEN',
+            details: tokenError.message
+          }),
+          { 
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        )
+      }
+
+      // Check if token verification was successful
+      const tokenResult = tokenData[0]
+      if (!tokenResult.success) {
+        return new Response(
+          JSON.stringify({ 
+            success: false,
+            error: tokenResult.error_message,
+            errorCode: tokenResult.error_code
+          }),
+          { 
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        )
+      }
+
+      // Token is valid, return the phone number and code for the user to enter
+      return new Response(
+        JSON.stringify({ 
+          success: true,
+          requiresCodeEntry: true,
+          phoneNumber: tokenResult.phone_number,
+          maskedPhone: tokenResult.phone_number ? 
+            tokenResult.phone_number.substring(0, 3) + '****' + tokenResult.phone_number.substring(tokenResult.phone_number.length - 2) : '',
+          message: 'Please enter the 6-digit verification code sent to your phone'
+        }),
+        { 
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+    
+    // Handle code-based verification
+    else if (phoneNumber && verificationCode) {
+      // Validate verification code format (6 digits)
+      if (!/^\d{6}$/.test(verificationCode)) {
+        return new Response(
+          JSON.stringify({ 
+            success: false,
+            error: 'Invalid verification code format',
+            errorCode: 'INVALID_FORMAT'
+          }),
+          { 
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        )
+      }
+
+      // Call the database function to verify with code
+      const { data: codeData, error: codeError } = await supabaseClient.rpc('verify_staff_with_code', {
+        p_phone_number: phoneNumber,
+        p_verification_code: verificationCode,
+        p_device_id: deviceInfo?.deviceId || null,
+        p_device_info: deviceInfo || {}
+      })
+
+      data = codeData
+      error = codeError
+    }
+    
+    // Missing required fields
+    else {
       return new Response(
         JSON.stringify({ 
           success: false,
-          error: 'Missing required fields',
+          error: 'Missing required fields. Provide either invitationToken or phoneNumber with verificationCode',
           errorCode: 'MISSING_FIELDS'
         }),
         { 
@@ -53,29 +145,6 @@ serve(async (req) => {
         }
       )
     }
-
-    // Validate verification code format (6 digits)
-    if (!/^\d{6}$/.test(verificationCode)) {
-      return new Response(
-        JSON.stringify({ 
-          success: false,
-          error: 'Invalid verification code format',
-          errorCode: 'INVALID_FORMAT'
-        }),
-        { 
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      )
-    }
-
-    // Call the database function to verify
-    const { data, error } = await supabaseClient.rpc('verify_staff_with_code', {
-      p_phone_number: phoneNumber,
-      p_verification_code: verificationCode,
-      p_device_id: deviceInfo?.deviceId || null,
-      p_device_info: deviceInfo || {}
-    })
 
     if (error) {
       console.error('Database error:', error)
