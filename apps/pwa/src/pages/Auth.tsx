@@ -504,7 +504,7 @@ export function AuthPage() {
       // Phone input screen
       return (
         <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-teal-50 flex flex-col">
-          <div className="flex-1 flex items-center justify-center px-6 py-safe">{/* Added py-safe for keyboard */}
+          <div className="flex-1 flex items-center justify-center px-6 py-safe">
             <div className="w-full max-w-md">
             {/* Back Button */}
             <button
@@ -621,7 +621,6 @@ export function AuthPage() {
             <p className="text-center text-sm text-gray-500 mt-6">
               Your phone number is encrypted and never shared
             </p>
-          </div>
 
             {/* Country Picker Modal */}
             {showCountryPicker && (
@@ -680,7 +679,7 @@ export function AuthPage() {
             </div>
           </div>
         </div>
-        )
+      )
 
     default:
       return null
