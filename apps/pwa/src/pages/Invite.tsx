@@ -282,7 +282,7 @@ export function InvitePage() {
                 <div className="flex items-center space-x-3">
                   <span className="text-2xl">{selectedCountry.flag}</span>
                   <div className="text-left">
-                    <p className="font-medium text-gray-900">{selectedCountry.country}</p>
+                    <p className="font-medium text-gray-900">{selectedCountry.name}</p>
                     <p className="text-sm text-gray-500">{selectedCountry.code}</p>
                   </div>
                 </div>

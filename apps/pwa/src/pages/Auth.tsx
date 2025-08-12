@@ -9,7 +9,7 @@ import PermissionsOnboarding from '../components/PermissionsOnboarding'
 import { staffAuth } from '../lib/staffAuth'
 import { useBiometric } from '../hooks/useBiometric'
 import { usePWAInstall } from '../hooks/usePWAInstall'
-import { formatPhoneNumber, unformatPhoneNumber, countryCodesData } from '../utils/phoneFormatter'
+import { formatPhoneForDisplay, formatPhoneForStorage, COUNTRIES, type Country } from '@safeping/phone-utils'
 
 type AuthMethod = 'biometric' | 'pin' | 'otp'
 type AuthFlow = 'invitation' | 'signin' | 'setup'
@@ -34,7 +34,7 @@ export function AuthPage() {
   // const [verificationCode, setVerificationCode] = useState('')
   
   // Country selection
-  const [selectedCountry, setSelectedCountry] = useState(countryCodesData[0])
+  const [selectedCountry, setSelectedCountry] = useState(COUNTRIES[0])
   const [showCountryPicker, setShowCountryPicker] = useState(false)
   const [countrySearch, setCountrySearch] = useState('')
 
@@ -195,7 +195,7 @@ export function AuthPage() {
     setError(null)
 
     try {
-      const fullPhoneNumber = selectedCountry.code + unformatPhoneNumber(phoneNumber)
+      const fullPhoneNumber = selectedCountry.dialCode + formatPhoneForStorage(phoneNumber)
       const result = await staffAuth.sendOTP(fullPhoneNumber)
       
       if (result.success) {
@@ -216,7 +216,7 @@ export function AuthPage() {
     setError(null)
 
     try {
-      const fullPhoneNumber = selectedCountry.code + unformatPhoneNumber(phoneNumber)
+      const fullPhoneNumber = selectedCountry.dialCode + formatPhoneForStorage(phoneNumber)
       const result = await staffAuth.verifyOTP(fullPhoneNumber, code)
       
       if (result.success) {
@@ -232,8 +232,8 @@ export function AuthPage() {
   }
 
   // Filter countries based on search
-  const filteredCountries = countryCodesData.filter(country => 
-    country.country.toLowerCase().includes(countrySearch.toLowerCase()) ||
+  const filteredCountries = COUNTRIES.filter((country: Country) => 
+    country.name.toLowerCase().includes(countrySearch.toLowerCase()) ||
     country.code.includes(countrySearch)
   )
 
@@ -476,7 +476,7 @@ export function AuthPage() {
                       <input
                         type="tel"
                         value={phoneNumber}
-                        onChange={(e) => setPhoneNumber(formatPhoneNumber(e.target.value))}
+                        onChange={(e) => setPhoneNumber(formatPhoneForDisplay(e.target.value))}
                         placeholder="(555) 123-4567"
                         className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-r-xl focus:border-blue-400 focus:outline-none transition-colors"
                         autoFocus
@@ -569,7 +569,7 @@ export function AuthPage() {
                         }`}
                       >
                         <span className="text-2xl">{country.flag}</span>
-                        <span className="flex-1 text-left text-gray-900">{country.country}</span>
+                        <span className="flex-1 text-left text-gray-900">{country.name}</span>
                         <span className="text-gray-500">{country.code}</span>
                         {selectedCountry.code === country.code && (
                           <Check className="text-blue-600" size={20} />

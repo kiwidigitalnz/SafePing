@@ -33,7 +33,7 @@ class StaffAuthManager {
     if (!StaffAuthManager.instance) {
       StaffAuthManager.instance = new StaffAuthManager()
     }
-    return WorkerAuthManager.instance
+    return StaffAuthManager.instance
   }
 
   // Load session from localStorage

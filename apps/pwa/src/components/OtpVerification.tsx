@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { MessageSquare, AlertCircle, ArrowLeft, Phone } from 'lucide-react'
-import { formatPhoneNumber } from '../utils/phoneFormatter'
+import { formatPhoneForDisplay } from '@safeping/phone-utils'
 
 interface OtpVerificationProps {
   phoneNumber: string
@@ -172,7 +172,7 @@ export function OtpVerification({
         <div className="flex items-center justify-center gap-2 mb-8">
           <Phone className="w-4 h-4 text-gray-500" />
           <p className="text-sm font-medium text-gray-900">
-            {formatPhoneNumber(phoneNumber)}
+            {formatPhoneForDisplay(phoneNumber)}
           </p>
         </div>
 
