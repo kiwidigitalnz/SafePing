@@ -100,11 +100,14 @@ export async function createUser(userData: {
   sendSMSInvitation?: boolean
   invited_by?: string
 }): Promise<User> {
+  // Extract invited_by from userData since it's not a column in users table
+  const { invited_by, sendSMSInvitation, ...userDataForInsert } = userData
+  
   // First create the user
   const { data: user, error: userError } = await supabase
     .from('users')
     .insert({
-      ...userData,
+      ...userDataForInsert,
       role: userData.role ?? 'staff',
       is_active: true,
       settings: {}
@@ -117,7 +120,7 @@ export async function createUser(userData: {
   }
 
   // If phone number is provided and SMS invitation is requested, create invitation and send SMS
-  if (userData.phone && userData.sendSMSInvitation) {
+  if (userData.phone && sendSMSInvitation) {
     try {
               // Create invitation record using RPC function
         const { data: invitationData, error: invitationError } = await supabase
@@ -125,7 +128,7 @@ export async function createUser(userData: {
             p_user_id: user.id,
             p_organization_id: userData.organization_id,
             p_phone_number: userData.phone,
-            p_invited_by: userData.invited_by || null
+            p_invited_by: invited_by || null
           })
 
       if (invitationError) {
