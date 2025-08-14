@@ -27,150 +27,65 @@ CREATE INDEX IF NOT EXISTS idx_verification_codes_phone ON verification_codes(ph
 CREATE INDEX IF NOT EXISTS idx_verification_codes_email ON verification_codes(email, code) WHERE email IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_verification_codes_expires ON verification_codes(expires_at);
 
--- Function to verify OTP code
-CREATE OR REPLACE FUNCTION verify_code_simple(
-  p_phone_number TEXT,
-  p_code TEXT
-) RETURNS JSONB AS $$
+
+
+-- Function to create phone-based verification codes
+CREATE OR REPLACE FUNCTION create_phone_verification_code(
+    p_phone_number TEXT,
+    p_type TEXT,
+    p_metadata JSONB DEFAULT '{}',
+    p_expires_minutes INTEGER DEFAULT 15
+)
+RETURNS TABLE(code_id UUID, code TEXT)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
 DECLARE
-  v_verification verification_codes;
-  v_user_id UUID;
+    v_code TEXT;
+    v_code_id UUID;
 BEGIN
-  -- Find the verification code
-  SELECT * INTO v_verification
-  FROM verification_codes
-  WHERE phone_number = p_phone_number
-    AND code = p_code
-    AND used_at IS NULL
-    AND expires_at > NOW()
-  ORDER BY created_at DESC
-  LIMIT 1;
-
-  -- Check if code exists
-  IF v_verification.id IS NULL THEN
-    -- Check if code exists but is expired
-    IF EXISTS (
-      SELECT 1 FROM verification_codes
-      WHERE phone_number = p_phone_number
-        AND code = p_code
-        AND expires_at <= NOW()
-    ) THEN
-      RETURN jsonb_build_object(
-        'success', false,
-        'error', 'Verification code has expired'
-      );
-    END IF;
+    -- Generate unique code
+    LOOP
+        v_code := generate_verification_code();
+        
+        -- Check if code already exists and is still valid
+        IF NOT EXISTS (
+            SELECT 1 FROM verification_codes vc
+            WHERE vc.code = v_code 
+            AND vc.expires_at > NOW() 
+            AND vc.used_at IS NULL
+        ) THEN
+            EXIT;
+        END IF;
+    END LOOP;
     
-    -- Check if code was already used
-    IF EXISTS (
-      SELECT 1 FROM verification_codes
-      WHERE phone_number = p_phone_number
-        AND code = p_code
-        AND used_at IS NOT NULL
-    ) THEN
-      RETURN jsonb_build_object(
-        'success', false,
-        'error', 'Verification code has already been used'
-      );
-    END IF;
+    -- Clean up old expired codes for this phone number
+    DELETE FROM verification_codes 
+    WHERE phone_number = p_phone_number 
+    AND expires_at < NOW();
     
-    -- Increment attempts for any active codes
-    UPDATE verification_codes
-    SET attempts = attempts + 1
-    WHERE phone_number = p_phone_number
-      AND used_at IS NULL
-      AND expires_at > NOW();
+    -- Create new verification code
+    INSERT INTO verification_codes (
+        phone_number,
+        code,
+        type,
+        metadata,
+        expires_at
+    ) VALUES (
+        p_phone_number,
+        v_code,
+        p_type,
+        p_metadata,
+        NOW() + (p_expires_minutes || ' minutes')::INTERVAL
+    ) RETURNING id INTO v_code_id;
     
-    RETURN jsonb_build_object(
-      'success', false,
-      'error', 'Invalid verification code'
-    );
-  END IF;
-
-  -- Mark code as used
-  UPDATE verification_codes
-  SET used_at = NOW()
-  WHERE id = v_verification.id;
-
-  -- Get user ID from metadata if available
-  v_user_id := (v_verification.metadata->>'user_id')::UUID;
-
-  RETURN jsonb_build_object(
-    'success', true,
-    'verification_id', v_verification.id,
-    'type', v_verification.type,
-    'user_id', v_user_id,
-    'metadata', v_verification.metadata
-  );
+    -- Return the code details
+    RETURN QUERY SELECT v_code_id, v_code;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- Function to create staff session after OTP verification
-CREATE OR REPLACE FUNCTION create_staff_session_after_otp(
-  p_user_id UUID,
-  p_device_id TEXT,
-  p_device_info JSONB DEFAULT '{}'
-) RETURNS JSONB AS $$
-DECLARE
-  v_session_id UUID;
-  v_session_token TEXT;
-  v_refresh_token TEXT;
-  v_expires_at TIMESTAMPTZ;
-BEGIN
-  -- Generate tokens
-  v_session_id := gen_random_uuid();
-  v_session_token := encode(gen_random_bytes(32), 'base64');
-  v_refresh_token := encode(gen_random_bytes(32), 'base64');
-  v_expires_at := NOW() + INTERVAL '30 days';
-
-  -- Create session
-  INSERT INTO staff_sessions (
-    id,
-    user_id,
-    session_token,
-    refresh_token,
-    device_id,
-    device_info,
-    expires_at,
-    last_activity_at
-  ) VALUES (
-    v_session_id,
-    p_user_id,
-    v_session_token,
-    v_refresh_token,
-    p_device_id,
-    p_device_info,
-    v_expires_at,
-    NOW()
-  );
-
-  -- Update user's last login
-  UPDATE users
-  SET 
-    last_login_at = NOW(),
-    last_activity_at = NOW()
-  WHERE id = p_user_id;
-
-  RETURN jsonb_build_object(
-    'success', true,
-    'session_id', v_session_id,
-    'session_token', v_session_token,
-    'refresh_token', v_refresh_token,
-    'expires_at', v_expires_at
-  );
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- Function to cleanup expired verification codes
-CREATE OR REPLACE FUNCTION cleanup_expired_verification_codes()
-RETURNS void AS $$
-BEGIN
-  DELETE FROM verification_codes
-  WHERE expires_at < NOW() - INTERVAL '24 hours';
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 -- Grant necessary permissions
-GRANT EXECUTE ON FUNCTION verify_code_simple TO anon, authenticated;
-GRANT EXECUTE ON FUNCTION create_staff_session_after_otp TO anon, authenticated;
-GRANT EXECUTE ON FUNCTION cleanup_expired_verification_codes TO service_role;
+GRANT EXECUTE ON FUNCTION create_phone_verification_code(TEXT, TEXT, JSONB, INTEGER) TO anon, authenticated;
+
+-- Add comment
+COMMENT ON FUNCTION create_phone_verification_code(TEXT, TEXT, JSONB, INTEGER) IS 'Generate and store a 6-digit verification code for phone numbers';

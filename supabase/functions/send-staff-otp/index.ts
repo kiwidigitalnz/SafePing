@@ -96,18 +96,18 @@ serve(async (req) => {
     // Generate 6-digit verification code
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString()
     
-    // Create verification code in database
-    const { data: codeData, error: codeError } = await supabaseClient
-      .rpc('create_verification_code', {
-        p_phone_number: phoneNumber,
-        p_type: type,
-        p_metadata: {
-          deviceInfo: deviceInfo || {},
-          requestType: type,
-          timestamp: new Date().toISOString()
-        },
-        p_expires_minutes: 15
-      })
+          // Create verification code in database
+      const { data: codeData, error: codeError } = await supabaseClient
+        .rpc('create_phone_verification_code', {
+          p_phone_number: phoneNumber,
+          p_type: type,
+          p_metadata: {
+            deviceInfo: deviceInfo || {},
+            requestType: type,
+            timestamp: new Date().toISOString()
+          },
+          p_expires_minutes: 15
+        })
 
     if (codeError) {
       console.error('Error creating verification code:', codeError)

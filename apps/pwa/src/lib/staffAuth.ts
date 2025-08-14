@@ -250,59 +250,58 @@ class StaffAuthManager {
   // Verify OTP for authentication
   async verifyOTP(phoneNumber: string, code: string): Promise<{ success: boolean; error?: string }> {
     try {
-      // First verify the code
-      const { data: verifyData, error: verifyError } = await supabase
-        .rpc('verify_code_simple', {
-          p_phone_number: phoneNumber,
-          p_code: code
-        })
-
-      if (verifyError || !verifyData?.success) {
-        return { success: false, error: 'Invalid verification code' }
-      }
-
-      // Get user by phone number
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('phone', phoneNumber)
-        .single()
-
-      if (userError || !userData) {
-        return { success: false, error: 'User not found' }
-      }
-
-      // Create new session
-      const deviceInfo = getDeviceInfo()
-      const { data: sessionData, error: sessionError } = await supabase
-        .rpc('create_staff_session_after_otp', {
-          p_user_id: userData.id,
-          p_device_id: deviceInfo.deviceId,
-          p_device_info: deviceInfo
-        })
-
-      if (sessionError || !sessionData?.success) {
-        return { success: false, error: 'Failed to create session' }
-      }
-
-      // Save session using unified session manager
-      const session: StaffSession = {
-        token: sessionData.session_token,
-        refreshToken: sessionData.refresh_token,
-        expiresAt: sessionData.expires_at,
-        userId: userData.id,
-        organizationId: userData.organization_id
-      }
-      
-      this.saveSession(session)
-      
-      // Also update unified session manager
-      sessionManager.setSession({
-        ...session,
-        user: userData
+      // Use the verify-staff Edge Function which handles both verification and session creation
+      const { data, error } = await supabase.functions.invoke('verify-staff', {
+        body: {
+          phoneNumber,
+          verificationCode: code,
+          deviceInfo: getDeviceInfo()
+        }
       })
-      
-      return { success: true }
+
+      if (error) {
+        // Try to parse more detailed error from response
+        let errorMessage = error.message || 'Verification failed'
+        try {
+          if ((error as any)?.body && typeof (error as any).body === 'string') {
+            const parsed = JSON.parse((error as any).body)
+            if (parsed?.error) errorMessage = parsed.error
+          }
+        } catch {
+          // Ignore parsing errors, use default error message
+        }
+        return { success: false, error: errorMessage }
+      }
+
+      if (data?.error) {
+        return { success: false, error: data.error }
+      }
+
+      if (data?.success) {
+        // Save session
+        const session: StaffSession = {
+          token: data.session.token,
+          refreshToken: data.session.refreshToken,
+          expiresAt: data.session.expiresAt,
+          userId: data.user.id,
+          organizationId: data.user.organizationId
+        }
+        
+        this.saveSession(session)
+        
+        // Store user info
+        localStorage.setItem('staff_user', JSON.stringify(data.user))
+        
+        // Also update unified session manager
+        sessionManager.setSession({
+          ...session,
+          user: data.user
+        })
+        
+        return { success: true }
+      }
+
+      return { success: false, error: 'Verification failed' }
     } catch (error: any) {
       console.error('Error verifying OTP:', error)
       return { success: false, error: error.message }
