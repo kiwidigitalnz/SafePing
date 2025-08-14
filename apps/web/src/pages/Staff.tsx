@@ -77,6 +77,10 @@ export function Staff() {
       queryClient.invalidateQueries({ queryKey: ['users'] })
       queryClient.invalidateQueries({ queryKey: ['user-stats'] })
       setViewMode('list')
+    },
+    onError: (error: any) => {
+      console.error('Create mutation error:', error)
+      // Error is already handled in handleCreate, but this provides an additional safety net
     }
   })
 
@@ -117,16 +121,22 @@ export function Staff() {
   }) || []
 
   const handleCreate = async (data: any) => {
-    const dbData = {
-      ...data,
-      role: data.role || 'staff',
-      organization_id: user!.organization_id!,
-      first_name: data.first_name || '',
-      last_name: data.last_name || '',
-      sendSMSInvitation: data.sendSMSInvitation || false,
-      invited_by: user!.id
+    try {
+      const dbData = {
+        ...data,
+        role: data.role || 'staff',
+        organization_id: user!.organization_id!,
+        first_name: data.first_name || '',
+        last_name: data.last_name || '',
+        sendSMSInvitation: data.sendSMSInvitation || false,
+        invited_by: user!.id
+      }
+      await createMutation.mutateAsync(dbData)
+      showSuccess('Staff member created', `${data.first_name} ${data.last_name} has been added successfully.`)
+    } catch (error: any) {
+      console.error('Error creating staff member:', error)
+      showError('Failed to create staff member', error.message || 'An error occurred while creating the staff member.')
     }
-    await createMutation.mutateAsync(dbData)
   }
 
   const handleUpdate = async (data: any) => {

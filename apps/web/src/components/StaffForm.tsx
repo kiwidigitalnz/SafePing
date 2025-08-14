@@ -203,6 +203,7 @@ export function StaffForm({ staff, organizationId, currentUserRole, onSubmit, on
       await onSubmit(submitData as any)
     } catch (error) {
       console.error('Error submitting form:', error)
+      throw error // Re-throw to let parent handle it
     }
   }
 
