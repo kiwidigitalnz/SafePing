@@ -22,6 +22,7 @@ interface StaffFormProps {
   staff?: any // Accept any type for staff to handle role conversion
   organizationId: string
   currentUserRole?: string
+  currentUserId?: string
   onSubmit: (data: any) => Promise<void>
   onCancel: () => void
   loading?: boolean
@@ -38,6 +39,7 @@ interface FormData {
   job_title: string | null
   emergency_contact_name: string | null
   emergency_contact_phone: string | null
+  sendSMSInvitation?: boolean
 }
 
 // Country codes data for NZ/AU region
@@ -204,7 +206,7 @@ export function StaffForm({ staff, organizationId, currentUserRole, onSubmit, on
     }
   }
 
-  const handleChange = (field: keyof FormData, value: string) => {
+  const handleChange = (field: keyof FormData, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }))
     // Clear error when user starts typing
     if (errors[field]) {
@@ -503,6 +505,30 @@ export function StaffForm({ staff, organizationId, currentUserRole, onSubmit, on
             </div>
           </div>
         </div>
+
+        {/* SMS Invitation */}
+        {!staff && formData.phone && (
+          <div className="space-y-4 pt-6 border-t border-gray-100">
+            <div className="flex items-start space-x-3">
+              <input
+                type="checkbox"
+                id="sendSMSInvitation"
+                checked={formData.sendSMSInvitation || false}
+                onChange={(e) => handleChange('sendSMSInvitation', e.target.checked)}
+                className="mt-1 w-4 h-4 text-[#15a2a6] border-gray-300 rounded focus:ring-[#15a2a6] focus:ring-2"
+              />
+              <div className="flex-1">
+                <label htmlFor="sendSMSInvitation" className="block text-sm font-semibold text-gray-700 mb-1">
+                  Send SMS Invitation
+                </label>
+                <p className="text-sm text-gray-600">
+                  Automatically send an SMS invitation with verification code to {formData.phone}. 
+                  The staff member will be able to join using the SafePing mobile app.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Form Actions */}
         <div className="flex justify-end space-x-4 pt-6 border-t border-gray-100">

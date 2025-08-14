@@ -103,16 +103,16 @@ export function AuthPage() {
     detectCountry()
   }, [])
 
-  // Check if user is already authenticated
-  useEffect(() => {
-    const checkAuth = async () => {
-      const isAuthenticated = await staffAuth.validateSession()
-      if (isAuthenticated) {
-        navigate('/dashboard')
-      }
-    }
-    checkAuth()
-  }, [navigate])
+          // Check if user is already authenticated
+        useEffect(() => {
+          const checkAuth = async () => {
+            const isAuthenticated = await staffAuth.validateSession()
+            if (isAuthenticated) {
+              navigate('/checkin')
+            }
+          }
+          checkAuth()
+        }, [navigate])
 
   // Handle invitation verification
   const handleInvitationVerification = async (code: string) => {
@@ -367,7 +367,7 @@ export function AuthPage() {
         }}
               onCancel={() => {
                 setSetupStep('complete')
-                setTimeout(() => navigate('/dashboard'), 2000)
+                setTimeout(() => navigate('/checkin'), 2000)
               }}
               isSetup={true}
             />
@@ -500,7 +500,7 @@ export function AuthPage() {
       return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
           <BiometricAuth
-            onSuccess={() => navigate('/dashboard')}
+            onSuccess={() => navigate('/checkin')}
             onCancel={() => setAuthMethod(null)}
           />
         </div>

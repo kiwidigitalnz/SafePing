@@ -87,8 +87,6 @@ class StaffAuthManager {
   }> {
     try {
       const deviceInfo = getDeviceInfo()
-      
-
 
       const { data, error } = await supabase.functions.invoke('verify-staff', {
         body: {
@@ -123,7 +121,7 @@ class StaffAuthManager {
           refreshToken: data.session.refreshToken,
           expiresAt: data.session.expiresAt,
           userId: data.user.id,
-          organizationId: data.user.organization_id
+          organizationId: data.user.organizationId
         }
         
         this.saveSession(session)

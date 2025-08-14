@@ -97,8 +97,11 @@ export async function createUser(userData: {
   employee_id?: string | null
   department?: string | null
   job_title?: string | null
+  sendSMSInvitation?: boolean
+  invited_by?: string
 }): Promise<User> {
-  const { data, error } = await supabase
+  // First create the user
+  const { data: user, error: userError } = await supabase
     .from('users')
     .insert({
       ...userData,
@@ -109,11 +112,51 @@ export async function createUser(userData: {
     .select()
     .single()
 
-  if (error) {
-    throw new Error(`Failed to create user: ${error.message}`)
+  if (userError) {
+    throw new Error(`Failed to create user: ${userError.message}`)
   }
 
-  return data
+  // If phone number is provided and SMS invitation is requested, create invitation and send SMS
+  if (userData.phone && userData.sendSMSInvitation) {
+    try {
+              // Create invitation record using RPC function
+        const { data: invitationData, error: invitationError } = await supabase
+          .rpc('create_staff_invitation', {
+            p_user_id: user.id,
+            p_organization_id: userData.organization_id,
+            p_phone_number: userData.phone,
+            p_invited_by: userData.invited_by || null
+          })
+
+      if (invitationError) {
+        console.error('Failed to create invitation record:', invitationError)
+        // Don't fail the user creation, just log the error
+      } else if (invitationData && invitationData.length > 0) {
+        const invitation = invitationData[0]
+        
+        // Send SMS invitation via edge function
+        const { error: smsError } = await supabase.functions.invoke('send-staff-invitation', {
+          body: {
+            phoneNumber: userData.phone,
+            invitationToken: invitation.invitation_token,
+            staffName: `${userData.first_name} ${userData.last_name}`,
+            organizationName: null, // Will be fetched by the edge function
+            verificationCode: invitation.verification_code
+          }
+        })
+
+        if (smsError) {
+          console.error('Failed to send SMS invitation:', smsError)
+          // Don't fail the user creation, just log the error
+        }
+      }
+    } catch (error) {
+      console.error('Error in invitation process:', error)
+      // Don't fail the user creation, just log the error
+    }
+  }
+
+  return user
 }
 
 /**

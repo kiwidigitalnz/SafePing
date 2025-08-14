@@ -42,11 +42,10 @@ serve(async (req) => {
 
     let data, error
 
-    // Handle token-based verification
+    // Handle invitation token verification (for staff invitations)
     if (invitationToken) {
       console.log('Verifying with invitation token:', invitationToken)
       
-      // First, get invitation details using the token
       const { data: tokenData, error: tokenError } = await supabaseClient.rpc('verify_staff_with_token', {
         p_invitation_token: invitationToken,
         p_device_id: deviceInfo?.deviceId || null,
@@ -59,8 +58,7 @@ serve(async (req) => {
           JSON.stringify({ 
             success: false,
             error: 'Invalid or expired invitation link',
-            errorCode: 'INVALID_TOKEN',
-            details: tokenError.message
+            errorCode: 'INVALID_TOKEN'
           }),
           { 
             status: 400,
@@ -69,7 +67,6 @@ serve(async (req) => {
         )
       }
 
-      // Check if token verification was successful
       const tokenResult = tokenData[0]
       if (!tokenResult.success) {
         return new Response(
@@ -85,7 +82,7 @@ serve(async (req) => {
         )
       }
 
-      // Token is valid, return the phone number and code for the user to enter
+      // Token is valid, return the phone number for the user to enter verification code
       return new Response(
         JSON.stringify({ 
           success: true,
@@ -102,7 +99,7 @@ serve(async (req) => {
       )
     }
     
-    // Handle code-based verification
+    // Handle direct OTP verification (for staff authentication)
     else if (phoneNumber && verificationCode) {
       // Validate verification code format (6 digits)
       if (!/^\d{6}$/.test(verificationCode)) {
@@ -201,7 +198,7 @@ serve(async (req) => {
       )
     }
 
-    // Generate session tokens (simplified - in production use proper JWT)
+    // Generate session tokens
     const sessionToken = crypto.randomUUID()
     const refreshToken = crypto.randomUUID()
 
@@ -245,18 +242,3 @@ serve(async (req) => {
     )
   }
 })
-
-/* To test this function:
-curl -i --location --request POST 'http://localhost:54321/functions/v1/verify-staff' \
-  --header 'Authorization: Bearer YOUR_ANON_KEY' \
-  --header 'Content-Type: application/json' \
-  --data '{
-    "phoneNumber": "+64212345678",
-    "verificationCode": "123456",
-    "deviceInfo": {
-      "deviceId": "test-device-123",
-      "deviceName": "iPhone 12",
-      "deviceType": "iOS"
-    }
-  }'
-*/

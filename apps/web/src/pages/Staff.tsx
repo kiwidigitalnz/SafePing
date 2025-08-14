@@ -122,7 +122,9 @@ export function Staff() {
       role: data.role || 'staff',
       organization_id: user!.organization_id!,
       first_name: data.first_name || '',
-      last_name: data.last_name || ''
+      last_name: data.last_name || '',
+      sendSMSInvitation: data.sendSMSInvitation || false,
+      invited_by: user!.id
     }
     await createMutation.mutateAsync(dbData)
   }
@@ -744,6 +746,7 @@ export function Staff() {
         <StaffForm
           organizationId={user.organization_id}
           currentUserRole={user.role}
+          currentUserId={user.id}
           onSubmit={handleCreate}
           onCancel={handleCancel}
           loading={createMutation.isPending}
